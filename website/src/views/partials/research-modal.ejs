@@ -1,0 +1,31 @@
+<div class="modal fade" id="researchModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0">
+        <h5 class="modal-title"><i class="bi bi-car-front-fill"></i> <span id="researchTitle">Researching…</span></h5>
+      </div>
+      <div class="modal-body">
+        <div class="research-car-track mb-3">
+          <i class="bi bi-car-front-fill research-car" id="researchCarIcon"></i>
+        </div>
+
+        <div id="researchStatus" class="fw-semibold mb-2">Starting…</div>
+        <div id="researchLog" class="research-log mb-3"></div>
+
+        <div id="researchQuestion" class="d-none border rounded p-3 mb-3 bg-light">
+          <p id="researchQuestionText" class="mb-2 fw-semibold"></p>
+          <div id="researchQuestionChoices" class="d-flex gap-2 flex-wrap mb-2"></div>
+          <div id="researchQuestionTextGroup" class="input-group d-none">
+            <input type="text" class="form-control" id="researchAnswerInput">
+            <button class="btn btn-primary" id="researchAnswerSubmit" type="button">Submit</button>
+          </div>
+        </div>
+
+        <div id="researchResult" class="d-none"></div>
+      </div>
+      <div class="modal-footer border-0">
+        <button type="button" class="btn btn-outline-danger" id="researchCancelBtn">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -11,14 +11,65 @@ body {
   margin-top: 0;
 }
 
-#runOutput {
+/* Research modal (TODOS #5): car-themed activity indicator + structured
+   status log, shared by every "Analyze"/"Research" trigger button. */
+.research-car-track {
+  position: relative;
+  height: 44px;
+  overflow: hidden;
+  border-radius: 0.375rem;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    transparent 62%,
+    #dee2e6 62%,
+    #dee2e6 68%,
+    transparent 68%,
+    transparent 100%
+  );
+}
+
+.research-car {
+  position: absolute;
+  top: 4px;
+  left: -10%;
+  font-size: 1.9rem;
+  color: var(--bs-primary);
+  animation: research-drive 1.6s linear infinite;
+}
+
+.research-car.is-paused {
+  animation-play-state: paused;
+  color: var(--bs-warning);
+}
+
+@keyframes research-drive {
+  0% {
+    left: -10%;
+    transform: scaleX(1);
+  }
+  100% {
+    left: 100%;
+    transform: scaleX(1);
+  }
+}
+
+.research-log {
   background: #0d1117;
   color: #c9d1d9;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   white-space: pre-wrap;
-  padding: 1rem;
+  padding: 0.75rem;
   border-radius: 0.375rem;
-  max-height: 60vh;
+  max-height: 35vh;
   overflow-y: auto;
+}
+
+.research-log .phase-line {
+  color: #7ee787;
+}
+
+.research-log .phase-line .detail {
+  color: #8b949e;
 }

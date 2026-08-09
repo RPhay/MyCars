@@ -5,7 +5,19 @@
   </ol>
 </nav>
 
-<h1><%= year %> <%= make %> <%= model %></h1>
+<div class="d-flex justify-content-between align-items-center">
+  <h1><%= year %> <%= make %> <%= model %></h1>
+  <div class="d-flex gap-2">
+    <button type="button" class="btn btn-outline-primary btn-sm"
+      data-research="skill" data-skill="vehicle-research"
+      data-make="<%= make %>" data-model="<%= model %>" data-year="<%= year %>">
+      <i class="bi bi-arrow-repeat"></i> <%= overview ? 'Re-research this type' : 'Research this type' %>
+    </button>
+    <button type="button" class="btn btn-primary btn-sm" data-research="vehicle">
+      <i class="bi bi-plus-lg"></i> Add a specific vehicle
+    </button>
+  </div>
+</div>
 
 <% if (photos.length > 0) { %>
   <div class="row row-cols-2 row-cols-md-4 g-2 mb-3">
@@ -32,7 +44,7 @@
   </div>
 <% } else { %>
   <div class="alert alert-info mt-3">
-    No type-level overview for this make/model/year yet. <a href="/run">Run vehicle-research</a> to add one.
+    No type-level overview for this make/model/year yet. Use "Research this type" above to add one.
   </div>
 <% } %>
 

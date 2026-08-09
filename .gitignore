@@ -1,0 +1,11 @@
+# Personal research data — never pushed
+/dealerships/
+/vehicles/
+
+# Website
+/website/node_modules/
+/website/.env
+/website/.env.*
+
+# OS
+.DS_Store

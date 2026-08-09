@@ -7,7 +7,7 @@ import { fileURLToPath } from 'url';
 import indexRouter from './routes/index.js';
 import dealershipsRouter from './routes/dealerships.js';
 import vehiclesRouter from './routes/vehicles.js';
-import runRouter from './routes/run.js';
+import apiRouter from './routes/api.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -41,7 +41,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/', indexRouter);
 app.use('/dealerships', dealershipsRouter);
 app.use('/vehicles', vehiclesRouter);
-app.use('/run', runRouter);
+app.use('/api', apiRouter);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date() });

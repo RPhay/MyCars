@@ -6,7 +6,16 @@
   </ol>
 </nav>
 
-<h1><%= vehicle.title %></h1>
+<%
+  const sellerUrlMatch = (vehicle.fields['Seller'] || '').match(/\((https?:\/\/[^)]+)\)/);
+  const rerunInput = sellerUrlMatch ? sellerUrlMatch[1] : vin;
+%>
+<div class="d-flex justify-content-between align-items-center">
+  <h1><%= vehicle.title %></h1>
+  <button type="button" class="btn btn-outline-primary btn-sm" data-research="vehicle" data-input="<%= rerunInput %>">
+    <i class="bi bi-arrow-repeat"></i> Re-research this vehicle
+  </button>
+</div>
 
 <% if (photos.length > 0) { %>
   <div class="row row-cols-2 row-cols-md-4 g-2 mb-3">

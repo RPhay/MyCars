@@ -5,7 +5,12 @@
   </ol>
 </nav>
 
-<h1><%= dealership.title %></h1>
+<div class="d-flex justify-content-between align-items-center">
+  <h1><%= dealership.title %></h1>
+  <button type="button" class="btn btn-outline-primary btn-sm" data-research="skill" data-skill="dealership-analyzer" data-url="<%= dealership.fields['Site'] %>">
+    <i class="bi bi-arrow-repeat"></i> Re-analyze
+  </button>
+</div>
 
 <dl class="row">
   <% Object.entries(dealership.fieldsHtml).forEach(([key, html]) => { %>

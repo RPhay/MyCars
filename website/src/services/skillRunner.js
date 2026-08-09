@@ -5,6 +5,13 @@ import config from '../config/environment.js';
 
 // In-memory only — single local user, no need to persist run status itself
 // (the skill's own output persists to dealerships/vehicles as usual).
+//
+// This spawns the full interactive `carfax-analyzer`/`dealership-analyzer`/
+// `vehicle-research` *skills* via the claude CLI — still the trigger
+// mechanism for dealership-analyzer and vehicle-research until their
+// hard-coded workflow equivalents (see services/workflows/) are built.
+// Vehicle/VIN research itself now runs through workflowRunner.js instead —
+// see vehicleWorkflow.js — since that's the one this pass reimplemented.
 const runs = new Map();
 
 // `claude -p` runs non-interactively and exits — there's no TTY to answer a
@@ -21,13 +28,14 @@ function buildArgs(prompt) {
 export function startRun(prompt) {
   const id = randomUUID();
   const emitter = new EventEmitter();
-  const record = { emitter, buffer: [], done: false, exitCode: null, error: null };
+  const record = { emitter, buffer: [], done: false, exitCode: null, error: null, child: null };
   runs.set(id, record);
 
   const child = spawn('claude', buildArgs(prompt), {
     cwd: config.projectRoot,
     env: process.env,
   });
+  record.child = child;
 
   const onData = (source) => (data) => {
     const text = data.toString();
@@ -67,93 +75,9 @@ export function getRun(id) {
   return runs.get(id);
 }
 
-const VIN_PATTERN = /^[A-HJ-NPR-Z0-9]{17}$/i; // VINs exclude I, O, Q
-
-export function looksLikeVin(value) {
-  return VIN_PATTERN.test(value.trim());
-}
-
-// NHTSA's public VIN decoder — no auth, no permission prompt (this is a
-// direct server-side fetch, not a Claude tool call). Verified response shape
-// by hand before building this: Series is closer to this project's "model"
-// convention (e.g. "2-Series") than NHTSA's own Model field, which is often
-// closer to a trim (e.g. "M235i") — see vehicle-research/SKILL.md Step 1 for
-// why getting this mapping wrong causes duplicate folders for the same car.
-export async function decodeVin(vin) {
-  const url = `https://vpic.nhtsa.dot.gov/api/vehicles/decodevinvalues/${encodeURIComponent(vin)}?format=json`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`NHTSA decode request failed (${res.status})`);
-  const data = await res.json();
-  const result = data.Results && data.Results[0];
-  if (!result || !result.Make || !result.ModelYear) {
-    throw new Error('NHTSA could not decode that VIN.');
-  }
-
-  const model = result.Series && result.Series.trim() ? result.Series.trim() : result.Model || '';
-  const trimParts = [result.Model, result.Trim].filter((v) => v && v.trim() && v.trim() !== model);
-  const trim = [...new Set(trimParts.map((v) => v.trim()))].join(' ');
-
-  return {
-    year: result.ModelYear,
-    make: result.Make,
-    model,
-    trim,
-  };
-}
-
-const VEHICLE_INFO_SCHEMA = JSON.stringify({
-  type: 'object',
-  properties: {
-    year: { type: 'string' },
-    make: { type: 'string' },
-    model: { type: 'string' },
-    trim: { type: 'string' },
-  },
-  required: ['year', 'make', 'model'],
-});
-
-// Blocking (not streamed) extraction call, for the vehicle-research form's
-// "prefill from URL" button — fetches the page and asks for structured
-// year/make/model/trim back. Confirmed envelope shape by running `claude -p
-// ... --output-format json --json-schema ...` directly: the top-level object
-// has `structured_output` already parsed (no need to re-parse `.result`) and
-// `is_error` to check for failure.
-export function extractVehicleInfo(url) {
-  return new Promise((resolve, reject) => {
-    const prompt = `Extract this vehicle's year, make, model, and trim from the page at ${url}. If a field genuinely isn't determinable, omit it rather than guessing.`;
-    const child = spawn(
-      'claude',
-      [
-        '-p',
-        prompt,
-        '--output-format',
-        'json',
-        '--json-schema',
-        VEHICLE_INFO_SCHEMA,
-        '--permission-mode',
-        'acceptEdits',
-      ],
-      { cwd: config.projectRoot, env: process.env },
-    );
-
-    let stdout = '';
-    let stderr = '';
-    child.stdout.on('data', (d) => (stdout += d.toString()));
-    child.stderr.on('data', (d) => (stderr += d.toString()));
-
-    child.on('error', (err) => reject(err));
-
-    child.on('close', () => {
-      let parsed;
-      try {
-        parsed = JSON.parse(stdout);
-      } catch {
-        return reject(new Error('Could not parse extraction output: ' + (stderr || stdout).slice(0, 500)));
-      }
-      if (parsed.is_error || !parsed.structured_output) {
-        return reject(new Error(parsed.result || 'Extraction failed'));
-      }
-      resolve(parsed.structured_output);
-    });
-  });
+export function cancelRun(id) {
+  const record = runs.get(id);
+  if (!record || record.done) return false;
+  record.child?.kill('SIGTERM');
+  return true;
 }

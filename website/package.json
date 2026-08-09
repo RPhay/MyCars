@@ -1,7 +1,7 @@
 {
   "name": "mycars-website",
   "version": "1.0.0",
-  "description": "Local web front end for browsing MyCars research and triggering skill runs",
+  "description": "Local web front end for browsing and researching dealerships and vehicles",
   "main": "server.js",
   "type": "module",
   "scripts": {
@@ -18,7 +18,8 @@
     "express-ejs-layouts": "^2.5.1",
     "helmet": "^7.1.0",
     "morgan": "^1.10.0",
-    "marked": "^12.0.0"
+    "marked": "^12.0.0",
+    "cheerio": "^1.0.0"
   },
   "devDependencies": {
     "eslint": "^8.50.0",
