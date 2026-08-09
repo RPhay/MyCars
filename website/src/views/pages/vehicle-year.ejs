@@ -1,0 +1,58 @@
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="/vehicles">Vehicles</a></li>
+    <li class="breadcrumb-item active"><%= year %> <%= make %> <%= model %></li>
+  </ol>
+</nav>
+
+<h1><%= year %> <%= make %> <%= model %></h1>
+
+<% if (photos.length > 0) { %>
+  <div class="row row-cols-2 row-cols-md-4 g-2 mb-3">
+    <% photos.forEach(p => { %>
+      <div class="col">
+        <a href="/vehicles/<%= encodeURIComponent(make) %>/<%= encodeURIComponent(model) %>/<%= encodeURIComponent(year) %>/photos/<%= encodeURIComponent(p) %>" target="_blank">
+          <img src="/vehicles/<%= encodeURIComponent(make) %>/<%= encodeURIComponent(model) %>/<%= encodeURIComponent(year) %>/photos/<%= encodeURIComponent(p) %>" class="img-fluid rounded" alt="<%= year %> <%= make %> <%= model %> photo">
+        </a>
+      </div>
+    <% }) %>
+  </div>
+<% } %>
+
+<% if (overview) { %>
+  <h2 class="h5 mt-4">Type overview</h2>
+  <dl class="row">
+    <% Object.entries(overview.fieldsHtml).forEach(([key, html]) => { %>
+      <dt class="col-sm-2"><%= key %></dt>
+      <dd class="col-sm-10"><%- html %></dd>
+    <% }) %>
+  </dl>
+  <div class="research-body">
+    <%- overview.bodyHtml %>
+  </div>
+<% } else { %>
+  <div class="alert alert-info mt-3">
+    No type-level overview for this make/model/year yet. <a href="/run">Run vehicle-research</a> to add one.
+  </div>
+<% } %>
+
+<h2 class="h5 mt-4">Specific vehicles</h2>
+<% if (vins.length === 0) { %>
+  <p class="text-muted">None researched yet.</p>
+<% } else { %>
+  <div class="list-group">
+    <% vins.forEach(v => { %>
+      <a href="/vehicles/<%= encodeURIComponent(make) %>/<%= encodeURIComponent(model) %>/<%= encodeURIComponent(year) %>/<%= encodeURIComponent(v.vin) %>" class="list-group-item list-group-item-action">
+        <div class="d-flex w-100 justify-content-between">
+          <strong><%= v.vin %></strong>
+          <small class="text-muted">
+            <% if (v.photoCount > 0) { %><i class="bi bi-image"></i> <%= v.photoCount %> · <% } %>
+            <%= v.fields['Last updated'] || '' %>
+          </small>
+        </div>
+        <p class="mb-1 text-truncate"><%= v.bottomLine %></p>
+        <small class="text-muted"><%= v.fields['Seller'] || '' %></small>
+      </a>
+    <% }) %>
+  </div>
+<% } %>

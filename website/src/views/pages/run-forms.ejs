@@ -1,0 +1,101 @@
+<h1 class="mb-4">Run a skill</h1>
+
+<% if (error) { %>
+  <div class="alert alert-danger"><%= error %></div>
+<% } %>
+
+<div class="alert alert-warning">
+  <strong>Known limitation:</strong> steps that need the claude-in-chrome browser tools (NHTSA recall lookups, Carfax report pages behind a device check, JS-rendered dealership sites) may not work from here — there's no interactive session to hand control to. If a run fails for that reason, it'll say so; run it from the terminal instead.
+</div>
+
+<div class="row g-4">
+  <div class="col-md-4">
+    <div class="card h-100">
+      <div class="card-body">
+        <h5 class="card-title">carfax-analyzer</h5>
+        <p class="card-text text-muted small">Analyze a single vehicle's Carfax report.</p>
+        <form method="POST" action="/run/carfax">
+          <div class="mb-3">
+            <label class="form-label">Report or listing URL</label>
+            <input type="url" name="url" class="form-control" placeholder="https://..." required>
+          </div>
+          <div class="mb-3 form-check">
+            <input type="checkbox" name="researchTypeFirst" id="researchTypeFirst" class="form-check-input" checked>
+            <label class="form-check-label" for="researchTypeFirst">Research the vehicle type first, if it hasn't been researched yet</label>
+          </div>
+          <button type="submit" class="btn btn-primary w-100">Run</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card h-100">
+      <div class="card-body">
+        <h5 class="card-title">dealership-analyzer</h5>
+        <p class="card-text text-muted small">Analyze a dealership's business model and reputation.</p>
+        <form method="POST" action="/run/dealership">
+          <div class="mb-3">
+            <label class="form-label">Dealership URL</label>
+            <input type="url" name="url" class="form-control" placeholder="https://..." required>
+          </div>
+          <div class="mb-3 form-check">
+            <input type="checkbox" name="spotCheck" id="spotCheck" class="form-check-input">
+            <label class="form-check-label" for="spotCheck">Also spot-check sample inventory vehicles via Carfax</label>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Sample size</label>
+            <input type="number" name="sampleSize" class="form-control" value="3" min="1" max="10">
+          </div>
+          <button type="submit" class="btn btn-primary w-100">Run</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card h-100">
+      <div class="card-body">
+        <h5 class="card-title">vehicle-research</h5>
+        <p class="card-text text-muted small">Research a make/model/year as a type — enter it directly, or start from a specific vehicle as an example to resolve it from.</p>
+
+        <div class="btn-group w-100 mb-3" role="group">
+          <input type="radio" class="btn-check" name="vrMode" id="vrModeType" checked>
+          <label class="btn btn-outline-secondary btn-sm" for="vrModeType">Make/Model/Year</label>
+          <input type="radio" class="btn-check" name="vrMode" id="vrModeVehicle">
+          <label class="btn btn-outline-secondary btn-sm" for="vrModeVehicle">Specific vehicle (VIN/URL)</label>
+        </div>
+
+        <div id="vrLookupGroup" class="input-group mb-2 d-none">
+          <input type="text" id="vehicleResearchPrefillInput" class="form-control form-control-sm" placeholder="VIN or listing URL...">
+          <button type="button" id="vehicleResearchPrefillBtn" class="btn btn-outline-secondary btn-sm">Look up</button>
+        </div>
+        <div id="vehicleResearchPrefillStatus" class="form-text mb-2"></div>
+
+        <form method="POST" action="/run/vehicle-research" id="vehicleResearchForm">
+          <div id="vrFieldsGroup">
+            <div class="mb-3">
+              <label class="form-label">Make</label>
+              <input type="text" name="make" id="vrMake" class="form-control" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Model</label>
+              <input type="text" name="model" id="vrModel" class="form-control" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Year</label>
+              <input type="text" name="year" id="vrYear" class="form-control" pattern="\d{4}" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Trim (optional)</label>
+              <input type="text" name="trim" id="vrTrim" class="form-control">
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary w-100">Run</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/run-forms.js"></script>

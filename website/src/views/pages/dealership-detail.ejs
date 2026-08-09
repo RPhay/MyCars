@@ -1,0 +1,21 @@
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="/dealerships">Dealerships</a></li>
+    <li class="breadcrumb-item active"><%= dealership.title %></li>
+  </ol>
+</nav>
+
+<h1><%= dealership.title %></h1>
+
+<dl class="row">
+  <% Object.entries(dealership.fieldsHtml).forEach(([key, html]) => { %>
+    <dt class="col-sm-2"><%= key %></dt>
+    <dd class="col-sm-10"><%- html %></dd>
+  <% }) %>
+</dl>
+
+<hr>
+
+<div class="research-body">
+  <%- dealership.bodyHtml %>
+</div>
