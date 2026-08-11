@@ -1,0 +1,155 @@
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="/vehicles">Vehicles</a></li>
+    <li class="breadcrumb-item"><a href="/vehicles/<%= encodeURIComponent(make) %>"><%= make %></a></li>
+    <li class="breadcrumb-item active"><%= model %></li>
+  </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center">
+  <h1><%= make %> <%= model %></h1>
+  <div class="d-flex gap-2">
+    <button type="button" class="btn btn-outline-primary btn-sm"
+      data-research="skill" data-skill="vehicle-research"
+      data-make="<%= make %>" data-model="<%= model %>">
+      <i class="bi bi-arrow-repeat"></i> Research a year of this model
+    </button>
+    <button type="button" class="btn btn-outline-danger btn-sm"
+      data-delete-url="/vehicles/<%= encodeURIComponent(make) %>/<%= encodeURIComponent(model) %>"
+      data-delete-name="<%= make %> <%= model %> (and all its years and vehicles)"
+      data-delete-context="page"
+      data-delete-redirect="/vehicles/<%= encodeURIComponent(make) %>"
+    >
+      <i class="bi bi-trash"></i> Delete <%= model %>
+    </button>
+  </div>
+</div>
+
+<div class="mb-3">
+  <%- include('../partials/star-rating', { metaUrl: `/vehicles/${encodeURIComponent(make)}/${encodeURIComponent(model)}/meta`, rating: meta.rating, status: meta.status, large: true }) %>
+</div>
+
+<h2 class="h5 mt-4">Years</h2>
+<% if (years.length === 0) { %>
+  <p class="text-muted">None researched yet.</p>
+<% } else { %>
+  <div class="mb-3">
+    <label for="yearSearch" class="visually-hidden">Search years</label>
+    <input type="search" id="yearSearch" class="form-control" placeholder="Search years…">
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-hover table-bordered align-middle" id="yearsTable">
+      <thead>
+        <tr>
+          <th scope="col" style="width: 100%;" data-sort="name" data-type="string" role="button">Year <i class="bi sort-icon"></i></th>
+          <th scope="col" class="text-nowrap" data-sort="rating" data-type="number" role="button">Rating <i class="bi sort-icon"></i></th>
+          <th scope="col" class="visually-hidden text-nowrap">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% years.forEach((y) => {
+          const yearUrl = `/vehicles/${encodeURIComponent(make)}/${encodeURIComponent(model)}/${encodeURIComponent(y.year)}`;
+        %>
+          <tr
+            data-name="<%= y.year.toLowerCase() %>"
+            data-rating="<%= y.meta.rating %>"
+            data-search="<%= y.year.toLowerCase() %>"
+            class="tree-row"
+            style="cursor: pointer;"
+            data-href="<%= yearUrl %>"
+          >
+            <td><a href="<%= yearUrl %>" class="fw-semibold text-decoration-none"><%= y.year %></a></td>
+            <td>
+              <%- include('../partials/star-rating', { metaUrl: `${yearUrl}/meta`, rating: y.meta.rating, status: y.meta.status }) %>
+            </td>
+            <td>
+              <button type="button" class="btn btn-sm btn-outline-danger row-delete"
+                data-delete-url="<%= yearUrl %>"
+                data-delete-name="<%= y.year %> <%= make %> <%= model %> (and all its vehicles)"
+                data-delete-context="page"
+                data-delete-redirect="/vehicles/<%= encodeURIComponent(make) %>/<%= encodeURIComponent(model) %>"
+                title="Delete this year and everything under it"
+              >
+                <i class="bi bi-trash"></i>
+              </button>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="text-muted small" id="yearEmptyState" style="display: none;">No years match your search.</p>
+<% } %>
+
+<h2 class="h5 mt-4">Vehicles</h2>
+<% if (vins.length === 0) { %>
+  <p class="text-muted">None researched yet.</p>
+<% } else { %>
+  <div class="mb-3">
+    <label for="modelVinSearch" class="visually-hidden">Search vehicles</label>
+    <input type="search" id="modelVinSearch" class="form-control" placeholder="Search vehicles…">
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-hover table-bordered align-middle" id="modelVinsTable">
+      <thead>
+        <tr>
+          <th scope="col" data-sort="year" data-type="string" role="button">Year <i class="bi sort-icon"></i></th>
+          <th scope="col" data-sort="vin" data-type="string" role="button">VIN <i class="bi sort-icon"></i></th>
+          <th scope="col" data-sort="rating" data-type="number" role="button">Rating <i class="bi sort-icon"></i></th>
+          <th scope="col" style="width: 100%;">Seller</th>
+          <th scope="col" class="visually-hidden text-nowrap">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% vins.forEach((v) => {
+          const vehicleUrl = `/vehicles/${encodeURIComponent(make)}/${encodeURIComponent(model)}/${encodeURIComponent(v.year)}/${encodeURIComponent(v.vin)}`;
+          const searchBlob = [v.year, v.vin, v.seller.name, v.bottomLine].join(' ').toLowerCase();
+        %>
+          <tr
+            data-year="<%= v.year.toLowerCase() %>"
+            data-vin="<%= v.vin.toLowerCase() %>"
+            data-rating="<%= v.meta.rating %>"
+            data-search="<%= searchBlob %>"
+            class="tree-row"
+            style="cursor: pointer;"
+            data-href="<%= vehicleUrl %>"
+          >
+            <td><a href="/vehicles/<%= encodeURIComponent(make) %>/<%= encodeURIComponent(model) %>/<%= encodeURIComponent(v.year) %>" class="text-decoration-none"><%= v.year %></a></td>
+            <td><a href="<%= vehicleUrl %>" class="fw-semibold text-decoration-none"><%= v.vin %></a></td>
+            <td>
+              <%- include('../partials/star-rating', { metaUrl: `${vehicleUrl}/meta`, rating: v.meta.rating, status: v.meta.status, aiRating: v.aiRating, bottomLineHtml: v.bottomLineHtml }) %>
+            </td>
+            <td>
+              <% if (v.seller.url) { %>
+                <a href="<%= v.seller.url %>" target="_blank" rel="noopener noreferrer"><%= v.seller.name %> <i class="bi bi-box-arrow-up-right"></i></a>
+              <% } else { %>
+                <%= v.seller.name %>
+              <% } %>
+            </td>
+            <td>
+              <button type="button" class="btn btn-sm btn-outline-danger row-delete"
+                data-delete-url="<%= vehicleUrl %>"
+                data-delete-name="<%= v.vin %>"
+                data-delete-context="row"
+                data-delete-row-selector="tr"
+                title="Delete this vehicle"
+              >
+                <i class="bi bi-trash"></i>
+              </button>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="text-muted small" id="modelVinEmptyState" style="display: none;">No vehicles match your search.</p>
+<% } %>
+
+<script src="/js/simple-tree-table.js" data-table-id="yearsTable" data-search-id="yearSearch" data-empty-id="yearEmptyState"></script>
+<script src="/js/simple-tree-table.js" data-table-id="modelVinsTable" data-search-id="modelVinSearch" data-empty-id="modelVinEmptyState"></script>
+<script src="/js/rating.js"></script>
+<script src="/js/popovers.js"></script>

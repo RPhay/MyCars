@@ -154,10 +154,50 @@
       statusEl.textContent = 'Cancelled.';
       statusEl.className = 'fw-semibold mb-2 text-muted';
     } else {
-      statusEl.textContent = 'Something went wrong.';
+      statusEl.textContent = 'Failed.';
       statusEl.className = 'fw-semibold mb-2 text-danger';
       resultEl.classList.remove('d-none');
-      resultEl.textContent = data.error || 'Unknown error.';
+      resultEl.innerHTML = '';
+
+      const reason = document.createElement('div');
+      reason.textContent = data.message || data.error || 'Unknown error.';
+      resultEl.appendChild(reason);
+
+      if (data.cliPrompt) {
+        const hint = document.createElement('div');
+        hint.className = 'fw-semibold mt-2';
+        hint.textContent = 'Run this from the Claude CLI instead:';
+        resultEl.appendChild(hint);
+
+        const row = document.createElement('div');
+        row.className = 'd-flex align-items-start gap-2 mt-1';
+
+        const code = document.createElement('pre');
+        code.className = 'bg-light border rounded p-2 mb-0 flex-grow-1';
+        code.style.whiteSpace = 'pre-wrap';
+        code.style.fontSize = '0.8rem';
+        code.textContent = `claude -p "${data.cliPrompt.replace(/"/g, '\\"')}"`;
+        row.appendChild(code);
+
+        const copyBtn = document.createElement('button');
+        copyBtn.type = 'button';
+        copyBtn.className = 'btn btn-outline-secondary btn-sm flex-shrink-0';
+        copyBtn.textContent = 'Copy';
+        copyBtn.addEventListener('click', async () => {
+          try {
+            await navigator.clipboard.writeText(`claude -p "${data.cliPrompt.replace(/"/g, '\\"')}"`);
+            copyBtn.textContent = 'Copied!';
+            setTimeout(() => (copyBtn.textContent = 'Copy'), 1500);
+          } catch {
+            copyBtn.textContent = 'Copy failed';
+          }
+        });
+        row.appendChild(copyBtn);
+
+        resultEl.appendChild(row);
+      }
+
+      if (data.technical) log(data.technical, 'phase-line detail');
     }
 
     cancelBtn.textContent = 'Close';
@@ -227,11 +267,13 @@
       if (skill === 'vehicle-research') {
         resetModal('Researching vehicle type…');
         bsModal.show();
+        const model = el.dataset.model || (await askQuestion({ kind: 'text', text: `Which ${el.dataset.make} model?`, placeholder: 'e.g. M235i' }));
+        const year = el.dataset.year || (await askQuestion({ kind: 'text', text: `Which year of ${el.dataset.make} ${model}?`, placeholder: 'e.g. 2020' }));
         beginSkillRun({
           skill,
           make: el.dataset.make,
-          model: el.dataset.model,
-          year: el.dataset.year,
+          model,
+          year,
           trim: el.dataset.trim,
         });
         return;

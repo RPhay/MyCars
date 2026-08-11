@@ -373,6 +373,7 @@ export async function vehicleWorkflow(ctx, { input }) {
     ['Seller', seller ? `${seller.domain || 'Unknown'} (${seller.url})` : 'not provided'],
     hasDealershipRecord ? ['Dealership record', `[${dealershipDomain}](../../../../../dealerships/${dealershipDomain}/analysis.md)`] : null,
     hasOverview ? ['Type overview', '[overview.md](../overview.md)'] : null,
+    reportSourceUrl ? ['History report', reportSourceUrl] : null,
   ].filter(Boolean);
 
   const content = await writeResearchFile(path.join(vinDir, 'analysis.md'), {

@@ -7,20 +7,124 @@
 
 <div class="d-flex justify-content-between align-items-center">
   <h1><%= dealership.title %></h1>
-  <button type="button" class="btn btn-outline-primary btn-sm" data-research="skill" data-skill="dealership-analyzer" data-url="<%= dealership.fields['Site'] %>">
-    <i class="bi bi-arrow-repeat"></i> Re-analyze
-  </button>
+  <div class="d-flex gap-2">
+    <button type="button" class="btn btn-outline-primary btn-sm" data-research="skill" data-skill="dealership-analyzer" data-url="<%= dealership.fields['Site'] %>">
+      <i class="bi bi-arrow-repeat"></i> Re-analyze
+    </button>
+    <button type="button" class="btn btn-outline-danger btn-sm"
+      data-delete-url="/dealerships/<%= encodeURIComponent(domain) %>"
+      data-delete-name="<%= dealership.title %>"
+      data-delete-context="page"
+      data-delete-redirect="/dealerships"
+    >
+      <i class="bi bi-trash"></i> Delete
+    </button>
+  </div>
+</div>
+
+<div class="mb-3">
+  <%- include('../partials/star-rating', {
+    metaUrl: `/dealerships/${encodeURIComponent(domain)}/meta`,
+    rating: dealership.meta.rating,
+    status: dealership.meta.status,
+    aiRating: dealership.aiRating,
+    bottomLineHtml: dealership.bottomLineHtml,
+    large: true,
+  }) %>
 </div>
 
 <dl class="row">
-  <% Object.entries(dealership.fieldsHtml).forEach(([key, html]) => { %>
+  <% Object.entries(dealership.fieldsHtml).forEach(([key, html]) => {
+    if (key === 'Vehicles researched here') return;
+  %>
     <dt class="col-sm-2"><%= key %></dt>
     <dd class="col-sm-10"><%- html %></dd>
   <% }) %>
 </dl>
+
+<% if (dealership.vehicleLinks.length > 0) { %>
+  <h2 class="h5 mt-4">Vehicles researched here</h2>
+  <div class="list-group mb-3">
+    <% dealership.vehicleLinks.forEach((v) => { %>
+      <a href="<%= v.href %>" class="list-group-item list-group-item-action"><%= v.label %></a>
+    <% }) %>
+  </div>
+<% } %>
 
 <hr>
 
 <div class="research-body">
   <%- dealership.bodyHtml %>
 </div>
+
+<h2 class="h5 mt-4">Your notes</h2>
+<div data-notes-url="/dealerships/<%= encodeURIComponent(domain) %>/meta">
+  <textarea class="form-control" rows="4" placeholder="Add your own notes about this dealership…"><%= dealership.meta.notes %></textarea>
+  <div class="mt-2">
+    <button type="button" class="btn btn-primary btn-sm" data-notes-save>Save notes</button>
+    <small class="text-muted ms-2" data-notes-saved style="display: none;"></small>
+  </div>
+</div>
+
+<h2 class="h5 mt-4">Correspondence log</h2>
+<form id="correspondenceForm" class="row g-2 mb-3 align-items-end" data-correspondence-url="/dealerships/<%= encodeURIComponent(domain) %>/correspondence">
+  <div class="col-sm-2">
+    <label class="form-label small mb-0">Date</label>
+    <input type="date" name="date" class="form-control form-control-sm" required>
+  </div>
+  <div class="col-sm-2">
+    <label class="form-label small mb-0">Method</label>
+    <select name="method" class="form-select form-select-sm" required>
+      <option value="Phone">Phone</option>
+      <option value="Email">Email</option>
+      <option value="In-person">In-person</option>
+      <option value="Text">Text</option>
+      <option value="Other">Other</option>
+    </select>
+  </div>
+  <div class="col-sm-3">
+    <label class="form-label small mb-0">Who</label>
+    <input type="text" name="who" class="form-control form-control-sm" placeholder="Contact name" required>
+  </div>
+  <div class="col-sm-3">
+    <label class="form-label small mb-0">Car (optional)</label>
+    <input type="text" name="car" class="form-control form-control-sm" placeholder="e.g. 2016 BMW 2 Series">
+  </div>
+  <div class="col-sm-2">
+    <button type="submit" class="btn btn-primary btn-sm w-100">Add entry</button>
+  </div>
+  <div class="col-12">
+    <label class="form-label small mb-0">What was discussed</label>
+    <textarea name="summary" class="form-control form-control-sm" rows="2" required></textarea>
+  </div>
+</form>
+
+<% if (dealership.meta.correspondence.length === 0) { %>
+  <p class="text-muted">No correspondence logged yet.</p>
+<% } else { %>
+  <div class="list-group mb-4">
+    <% dealership.meta.correspondence.slice().reverse().forEach(c => { %>
+      <div class="list-group-item correspondence-row">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <strong><%= c.date %></strong> · <%= c.method %> · <%= c.who %>
+            <% if (c.car) { %> · <em><%= c.car %></em><% } %>
+          </div>
+          <button type="button" class="btn btn-sm btn-outline-danger py-0 px-1"
+            data-delete-url="/dealerships/<%= encodeURIComponent(domain) %>/correspondence/<%= encodeURIComponent(c.id) %>"
+            data-delete-name="this correspondence entry"
+            data-delete-context="row"
+            data-delete-row-selector=".correspondence-row"
+          >
+            <i class="bi bi-trash"></i>
+          </button>
+        </div>
+        <p class="mb-0 mt-1"><%= c.summary %></p>
+      </div>
+    <% }) %>
+  </div>
+<% } %>
+
+<script src="/js/rating.js"></script>
+<script src="/js/notes.js"></script>
+<script src="/js/correspondence.js"></script>

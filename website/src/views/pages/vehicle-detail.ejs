@@ -9,12 +9,46 @@
 <%
   const sellerUrlMatch = (vehicle.fields['Seller'] || '').match(/\((https?:\/\/[^)]+)\)/);
   const rerunInput = sellerUrlMatch ? sellerUrlMatch[1] : vin;
+  const sellerName = (vehicle.fields['Seller'] || '').replace(/\s*\(https?:\/\/[^)]+\)/, '');
 %>
 <div class="d-flex justify-content-between align-items-center">
-  <h1><%= vehicle.title %></h1>
-  <button type="button" class="btn btn-outline-primary btn-sm" data-research="vehicle" data-input="<%= rerunInput %>">
-    <i class="bi bi-arrow-repeat"></i> Re-research this vehicle
-  </button>
+  <h1>
+    <% if (sellerUrlMatch) { %>
+      <a href="<%= sellerUrlMatch[1] %>" target="_blank" rel="noopener noreferrer" title="View original listing" class="me-1">
+        <i class="bi bi-box-arrow-up-right"></i>
+      </a>
+    <% } %>
+    <% if (vehicle.fields['History report']) { %>
+      <a href="<%= vehicle.fields['History report'] %>" target="_blank" rel="noopener noreferrer" title="View history report" class="me-1">
+        <i class="bi bi-file-earmark-text"></i>
+      </a>
+    <% } %>
+    <%= vehicle.title %>
+  </h1>
+  <div class="d-flex gap-2">
+    <button type="button" class="btn btn-outline-primary btn-sm" data-research="vehicle" data-input="<%= rerunInput %>">
+      <i class="bi bi-arrow-repeat"></i> Re-research this vehicle
+    </button>
+    <button type="button" class="btn btn-outline-danger btn-sm"
+      data-delete-url="/vehicles/<%= encodeURIComponent(make) %>/<%= encodeURIComponent(model) %>/<%= encodeURIComponent(year) %>/<%= encodeURIComponent(vin) %>"
+      data-delete-name="<%= vin %>"
+      data-delete-context="page"
+      data-delete-redirect="/vehicles/<%= encodeURIComponent(make) %>/<%= encodeURIComponent(model) %>/<%= encodeURIComponent(year) %>"
+    >
+      <i class="bi bi-trash"></i> Delete
+    </button>
+  </div>
+</div>
+
+<div class="mb-3">
+  <%- include('../partials/star-rating', {
+    metaUrl: `/vehicles/${encodeURIComponent(make)}/${encodeURIComponent(model)}/${encodeURIComponent(year)}/${encodeURIComponent(vin)}/meta`,
+    rating: vehicle.meta.rating,
+    status: vehicle.meta.status,
+    aiRating: vehicle.aiRating,
+    bottomLineHtml: vehicle.bottomLineHtml,
+    large: true,
+  }) %>
 </div>
 
 <% if (photos.length > 0) { %>
@@ -30,9 +64,17 @@
 <% } %>
 
 <dl class="row">
-  <% Object.entries(vehicle.fieldsHtml).forEach(([key, html]) => { %>
+  <% Object.entries(vehicle.fieldsHtml).forEach(([key, html]) => {
+    if (key === 'History report') return; // shown as an icon next to the title instead
+  %>
     <dt class="col-sm-2"><%= key %></dt>
-    <dd class="col-sm-10"><%- html %></dd>
+    <dd class="col-sm-10">
+      <% if (key === 'Seller') { %>
+        <%= sellerName %>
+      <% } else { %>
+        <%- html %>
+      <% } %>
+    </dd>
   <% }) %>
 </dl>
 
@@ -41,3 +83,16 @@
 <div class="research-body">
   <%- vehicle.bodyHtml %>
 </div>
+
+<h2 class="h5 mt-4">Your notes</h2>
+<div data-notes-url="/vehicles/<%= encodeURIComponent(make) %>/<%= encodeURIComponent(model) %>/<%= encodeURIComponent(year) %>/<%= encodeURIComponent(vin) %>/meta">
+  <textarea class="form-control" rows="4" placeholder="Add your own notes about this vehicle…"><%= vehicle.meta.notes %></textarea>
+  <div class="mt-2">
+    <button type="button" class="btn btn-primary btn-sm" data-notes-save>Save notes</button>
+    <small class="text-muted ms-2" data-notes-saved style="display: none;"></small>
+  </div>
+</div>
+
+<script src="/js/rating.js"></script>
+<script src="/js/notes.js"></script>
+<script src="/js/popovers.js"></script>

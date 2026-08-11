@@ -6,35 +6,145 @@
 <% if (makes.length === 0) { %>
   <div class="alert alert-info">No vehicles researched yet.</div>
 <% } else { %>
-  <div class="accordion" id="makesAccordion">
-    <% makes.forEach((m, mi) => { %>
-      <div class="accordion-item">
-        <h2 class="accordion-header">
-          <button class="accordion-button <%= mi > 0 ? 'collapsed' : '' %>" type="button" data-bs-toggle="collapse" data-bs-target="#make-<%= mi %>">
-            <%= m.make %>
-          </button>
-        </h2>
-        <div id="make-<%= mi %>" class="accordion-collapse collapse <%= mi === 0 ? 'show' : '' %>" data-bs-parent="#makesAccordion">
-          <div class="accordion-body">
-            <% m.models.forEach(model => { %>
-              <h6><%= model.model %></h6>
-              <ul class="list-unstyled ms-3 mb-3">
-                <% model.years.forEach(y => { %>
-                  <li class="mb-1">
-                    <a href="/vehicles/<%= encodeURIComponent(m.make) %>/<%= encodeURIComponent(model.model) %>/<%= encodeURIComponent(y.year) %>">
-                      <%= y.year %>
-                    </a>
-                    <span class="text-muted small">
-                      <% if (y.overview) { %>· type overview<% } %>
-                      <% if (y.vins.length) { %>· <%= y.vins.length %> vehicle<%= y.vins.length === 1 ? '' : 's' %><% } %>
-                    </span>
-                  </li>
-                <% }) %>
-              </ul>
-            <% }) %>
-          </div>
-        </div>
-      </div>
-    <% }) %>
+  <div class="mb-3">
+    <label for="vehicleSearch" class="visually-hidden">Search vehicles</label>
+    <input type="search" id="vehicleSearch" class="form-control" placeholder="Search vehicles…">
   </div>
+
+  <div class="table-responsive">
+    <table class="table table-hover align-middle" id="vehicleTreeTable">
+      <thead>
+        <tr>
+          <th scope="col" style="width: 100%;">Name</th>
+          <th scope="col" class="text-nowrap">Rating</th>
+          <th scope="col" class="visually-hidden text-nowrap">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% makes.forEach((m, mi) => {
+          const makeId = `make-${mi}`;
+          const modelsWithBlobs = m.models.map((model, modi) => {
+            const modelId = `${makeId}-model-${modi}`;
+            const yearsWithBlobs = model.years.map((y) => {
+              const vinBlob = y.vins.map((v) => [v.vin, v.bottomLine, v.fields['Seller']].filter(Boolean).join(' ')).join(' ');
+              return Object.assign({}, y, { blob: [y.year, vinBlob].join(' ').toLowerCase() });
+            });
+            const modelBlob = [model.model, yearsWithBlobs.map((y) => y.blob).join(' ')].join(' ').toLowerCase();
+            return Object.assign({}, model, { modelId, years: yearsWithBlobs, blob: modelBlob });
+          });
+          const makeBlob = [m.make, modelsWithBlobs.map((md) => md.blob).join(' ')].join(' ').toLowerCase();
+        %>
+          <tr class="tree-row depth-0" data-node-id="<%= makeId %>" data-depth="0" data-expanded="false" data-search="<%= makeBlob %>" data-href="/vehicles/<%= encodeURIComponent(m.make) %>">
+            <td>
+              <i class="bi bi-chevron-right tree-chevron"></i>
+              <span class="fw-semibold"><%= m.make %></span>
+            </td>
+            <td>
+              <%- include('../partials/star-rating', { metaUrl: `/vehicles/${encodeURIComponent(m.make)}/meta`, rating: m.meta.rating, status: m.meta.status }) %>
+            </td>
+            <td>
+              <button type="button" class="btn btn-sm btn-outline-danger row-delete"
+                data-delete-url="/vehicles/<%= encodeURIComponent(m.make) %>"
+                data-delete-name="<%= m.make %> (and all its models, years, and vehicles)"
+                data-delete-context="page"
+                data-delete-redirect="/vehicles"
+                title="Delete <%= m.make %> and everything under it"
+              >
+                <i class="bi bi-trash"></i>
+              </button>
+            </td>
+          </tr>
+
+          <% modelsWithBlobs.forEach((model) => { %>
+            <tr class="tree-row depth-1" data-node-id="<%= model.modelId %>" data-make-id="<%= makeId %>" data-depth="1" data-search="<%= model.blob %>" data-href="/vehicles/<%= encodeURIComponent(m.make) %>/<%= encodeURIComponent(model.model) %>">
+              <td>
+                <%= model.model %>
+              </td>
+              <td>
+                <%- include('../partials/star-rating', { metaUrl: `/vehicles/${encodeURIComponent(m.make)}/${encodeURIComponent(model.model)}/meta`, rating: model.meta.rating, status: model.meta.status }) %>
+              </td>
+              <td>
+                <button type="button" class="btn btn-sm btn-outline-danger row-delete"
+                  data-delete-url="/vehicles/<%= encodeURIComponent(m.make) %>/<%= encodeURIComponent(model.model) %>"
+                  data-delete-name="<%= m.make %> <%= model.model %> (and all its years and vehicles)"
+                  data-delete-context="page"
+                  data-delete-redirect="/vehicles"
+                  title="Delete <%= model.model %> and everything under it"
+                >
+                  <i class="bi bi-trash"></i>
+                </button>
+              </td>
+            </tr>
+
+            <% model.years.forEach((y) => { %>
+              <tr class="tree-row depth-2" data-make-id="<%= makeId %>" data-depth="2" data-search="<%= y.blob %>"
+                data-href="/vehicles/<%= encodeURIComponent(m.make) %>/<%= encodeURIComponent(model.model) %>/<%= encodeURIComponent(y.year) %>"
+              >
+                <td>
+                  <%= y.year %>
+                  <% if (y.overview) { %>
+                    <i class="bi bi-file-text text-muted" title="Type overview available"></i>
+                  <% } %>
+                </td>
+                <td>
+                  <%- include('../partials/star-rating', { metaUrl: `/vehicles/${encodeURIComponent(m.make)}/${encodeURIComponent(model.model)}/${encodeURIComponent(y.year)}/meta`, rating: y.meta.rating, status: y.meta.status }) %>
+                </td>
+                <td>
+                  <button type="button" class="btn btn-sm btn-outline-danger row-delete"
+                    data-delete-url="/vehicles/<%= encodeURIComponent(m.make) %>/<%= encodeURIComponent(model.model) %>/<%= encodeURIComponent(y.year) %>"
+                    data-delete-name="<%= y.year %> <%= m.make %> <%= model.model %> (and all its vehicles)"
+                    data-delete-context="page"
+                    data-delete-redirect="/vehicles"
+                    title="Delete this year and everything under it"
+                  >
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </td>
+              </tr>
+
+              <% y.vins.forEach((v) => {
+                const vehicleUrl = `/vehicles/${encodeURIComponent(m.make)}/${encodeURIComponent(model.model)}/${encodeURIComponent(y.year)}/${encodeURIComponent(v.vin)}`;
+              %>
+                <tr class="tree-row depth-3" data-make-id="<%= makeId %>" data-depth="3"
+                  data-search="<%= [v.vin, v.seller.name, v.bottomLine].filter(Boolean).join(' ').toLowerCase() %>"
+                  data-href="<%= vehicleUrl %>"
+                >
+                  <td>
+                    <%= v.vin %>
+                    <% if (v.seller.name) { %>
+                      <span class="text-muted small">
+                        — <%= v.seller.name %>
+                        <% if (v.dealership) { %>
+                          <% for (let i = 1; i <= 5; i++) { %><i class="bi <%= i <= v.dealership.meta.rating ? 'bi-star-fill text-warning' : 'bi-star text-muted' %>"></i><% } %>
+                        <% } %>
+                      </span>
+                    <% } %>
+                  </td>
+                  <td>
+                    <%- include('../partials/star-rating', { metaUrl: `${vehicleUrl}/meta`, rating: v.meta.rating, status: v.meta.status, aiRating: v.aiRating, bottomLineHtml: v.bottomLineHtml }) %>
+                  </td>
+                  <td>
+                    <button type="button" class="btn btn-sm btn-outline-danger row-delete"
+                      data-delete-url="<%= vehicleUrl %>"
+                      data-delete-name="<%= v.vin %>"
+                      data-delete-context="row"
+                      data-delete-row-selector="tr"
+                      title="Delete this vehicle"
+                    >
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+              <% }) %>
+            <% }) %>
+          <% }) %>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="text-muted small" id="vehicleEmptyState" style="display: none;">No vehicles match your search.</p>
 <% } %>
+
+<script src="/js/vehicle-tree.js"></script>
+<script src="/js/rating.js"></script>

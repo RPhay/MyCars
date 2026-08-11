@@ -73,3 +73,51 @@ body {
 .research-log .phase-line .detail {
   color: #8b949e;
 }
+
+/* Vehicle treeview (vehicle-list.ejs): a real <table> (see uix-standards.md's
+   general table convention) so every row — make, model, year — shares the
+   same row height and font regardless of depth. The hierarchy reads through
+   indentation and a chevron on the collapsible make row alone, not through
+   different heading levels or font sizes per depth (that was the "looks
+   distracting" problem with the earlier accordion/list version). */
+.tree-row.depth-1 td:first-child {
+  padding-left: 2rem;
+}
+
+.tree-row.depth-2 td:first-child {
+  padding-left: 3.5rem;
+}
+
+.tree-row.depth-3 td:first-child {
+  padding-left: 5rem;
+}
+
+.tree-row[data-href] {
+  cursor: pointer;
+}
+
+.tree-chevron {
+  display: inline-block;
+  width: 1em;
+  transition: transform 0.12s ease-in-out;
+  color: var(--bs-secondary-color);
+}
+
+.tree-row.depth-0[data-expanded="true"] .tree-chevron {
+  transform: rotate(90deg);
+}
+
+/* Delete is destructive and used rarely — reveal it on hover/focus instead of
+   rendering a red-bordered button on every row all the time (the same
+   convention Gmail/Notion/GitHub's PR list use for row-level delete). Rating/
+   favorite/avoid stay always-visible since they reflect real state, not just
+   an available action. */
+.tree-row .row-delete {
+  opacity: 0;
+  transition: opacity 0.12s ease-in-out;
+}
+
+.tree-row:hover .row-delete,
+.tree-row:focus-within .row-delete {
+  opacity: 1;
+}

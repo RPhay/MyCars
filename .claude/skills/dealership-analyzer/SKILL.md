@@ -46,7 +46,7 @@ Read `../../../references/car-sites.md` and `../../../references/general-dealers
 
 Give the user a structured report:
 
-1. **Bottom line** — one paragraph: overall read (trustworthy / proceed with normal caution / red flags present) and the single biggest reason why.
+1. **Bottom line** — one paragraph, leading with **Rating: N/5** per `../../../references/research-storage.md`'s rating rubric, then overall read (trustworthy / proceed with normal caution / red flags present) and the single biggest reason why.
 2. **Business model & inventory** — franchise/independent, brands, new/used/CPO mix, price tiers, locations, size.
 3. **Reputation across review platforms** — per-platform rating/count/themes from Step 3, including platforms with no presence.
 4. **BBB standing** — grade and complaints tab findings from Step 4.
@@ -63,4 +63,4 @@ If the invocation already states a spot-check decision up front (e.g. a request 
 
 ## Step 8: Persist the research
 
-Write/update `dealerships/<domain>/analysis.md` per `../../../references/research-storage.md` (paths relative to the project root) with this analysis, including links to any vehicle files created in Step 7. This happens on every run, whether or not Step 7's spot-check was accepted.
+Write/update `dealerships/<domain>/analysis.md` per `../../../references/research-storage.md` (paths relative to the project root) with this analysis, including the `Rating: N/5` header field from Step 6 and links to any vehicle files created in Step 7. This happens on every run, whether or not Step 7's spot-check was accepted.

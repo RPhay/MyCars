@@ -26,7 +26,15 @@ export function askClaudeJson(prompt, schema, signal) {
         '--permission-mode',
         'acceptEdits',
       ],
-      { cwd: config.projectRoot, env: process.env, signal },
+      {
+        cwd: config.projectRoot,
+        env: process.env,
+        signal,
+        // See skillRunner.js's identical stdio note — without this, stdin is
+        // left as a dangling open pipe and `claude -p` stalls for several
+        // seconds waiting to see if anything arrives on it.
+        stdio: ['ignore', 'pipe', 'pipe'],
+      },
     );
 
     let stdout = '';
@@ -77,11 +85,12 @@ export function looksLikeVin(value) {
 // both are "resolve a vehicle's identity" helpers, even though this one
 // doesn't call claude — it's NHTSA's public vpic decoder. No auth, no
 // Claude Code permission prompt (this is a plain server-side fetch, not a
-// tool call). Field mapping verified by hand: NHTSA's `Series` lines up
-// with this project's "model" convention (e.g. "2-Series") better than its
-// own `Model` field, which is often closer to a trim (e.g. "M235i") — see
-// vehicle-research/SKILL.md Step 1 for why getting this backwards causes
-// duplicate folders for the same car.
+// tool call). Field mapping: use NHTSA's `Model` field for this project's
+// `model` (the specific nameplate as sold, e.g. "M235i") — NOT `Series` (a
+// generic model-line grouping, e.g. "2 Series", that spans multiple distinct
+// nameplates and doesn't narrow the folder down enough). See
+// vehicle-research/SKILL.md Step 1 and research-storage.md for why getting
+// this backwards causes duplicate/wrong folders for the same car.
 export async function decodeVin(vin, signal) {
   const url = `https://vpic.nhtsa.dot.gov/api/vehicles/decodevinvalues/${encodeURIComponent(vin)}?format=json`;
   const res = await fetch(url, { signal });
@@ -92,8 +101,8 @@ export async function decodeVin(vin, signal) {
     throw new Error('NHTSA could not decode that VIN.');
   }
 
-  const model = result.Series && result.Series.trim() ? result.Series.trim() : result.Model || '';
-  const trimParts = [result.Model, result.Trim].filter((v) => v && v.trim() && v.trim() !== model);
+  const model = result.Model && result.Model.trim() ? result.Model.trim() : result.Series || '';
+  const trimParts = [result.Series, result.Trim].filter((v) => v && v.trim() && v.trim() !== model);
   const trim = [...new Set(trimParts.map((v) => v.trim()))].join(' ');
 
   return { year: result.ModelYear, make: result.Make, model, trim };

@@ -16,7 +16,19 @@
     <button type="button" class="btn btn-primary btn-sm" data-research="vehicle">
       <i class="bi bi-plus-lg"></i> Add a specific vehicle
     </button>
+    <button type="button" class="btn btn-outline-danger btn-sm"
+      data-delete-url="/vehicles/<%= encodeURIComponent(make) %>/<%= encodeURIComponent(model) %>/<%= encodeURIComponent(year) %>"
+      data-delete-name="<%= year %> <%= make %> <%= model %> (and all its vehicles)"
+      data-delete-context="page"
+      data-delete-redirect="/vehicles"
+    >
+      <i class="bi bi-trash"></i> Delete this year
+    </button>
   </div>
+</div>
+
+<div class="mb-3">
+  <%- include('../partials/star-rating', { metaUrl: `/vehicles/${encodeURIComponent(make)}/${encodeURIComponent(model)}/${encodeURIComponent(year)}/meta`, rating: meta.rating, status: meta.status, large: true }) %>
 </div>
 
 <% if (photos.length > 0) { %>
@@ -52,19 +64,74 @@
 <% if (vins.length === 0) { %>
   <p class="text-muted">None researched yet.</p>
 <% } else { %>
-  <div class="list-group">
-    <% vins.forEach(v => { %>
-      <a href="/vehicles/<%= encodeURIComponent(make) %>/<%= encodeURIComponent(model) %>/<%= encodeURIComponent(year) %>/<%= encodeURIComponent(v.vin) %>" class="list-group-item list-group-item-action">
-        <div class="d-flex w-100 justify-content-between">
-          <strong><%= v.vin %></strong>
-          <small class="text-muted">
-            <% if (v.photoCount > 0) { %><i class="bi bi-image"></i> <%= v.photoCount %> · <% } %>
-            <%= v.fields['Last updated'] || '' %>
-          </small>
-        </div>
-        <p class="mb-1 text-truncate"><%= v.bottomLine %></p>
-        <small class="text-muted"><%= v.fields['Seller'] || '' %></small>
-      </a>
-    <% }) %>
+  <div class="mb-3">
+    <label for="vehicleSearch" class="visually-hidden">Search vehicles</label>
+    <input type="search" id="vehicleSearch" class="form-control" placeholder="Search vehicles…">
   </div>
+
+  <div class="table-responsive">
+    <table class="table table-hover table-bordered align-middle" id="vehicleTable">
+      <thead>
+        <tr>
+          <th scope="col" data-sort="vin" data-type="string" role="button">VIN <i class="bi sort-icon"></i></th>
+          <th scope="col" data-sort="rating" data-type="number" role="button">Rating <i class="bi sort-icon"></i></th>
+          <th scope="col">Seller</th>
+          <th scope="col" data-sort="photos" data-type="number" role="button">Photos <i class="bi sort-icon"></i></th>
+          <th scope="col" data-sort="updated" data-type="string" role="button">Last updated <i class="bi sort-icon"></i></th>
+          <th scope="col">Bottom line</th>
+          <th scope="col">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% vins.forEach(v => {
+          const updated = v.fields['Last updated'] || '';
+          const searchBlob = [v.vin, v.seller.name, v.bottomLine].join(' ').toLowerCase();
+          const vehicleUrl = `/vehicles/${encodeURIComponent(make)}/${encodeURIComponent(model)}/${encodeURIComponent(year)}/${encodeURIComponent(v.vin)}`;
+        %>
+          <tr
+            data-vin="<%= v.vin.toLowerCase() %>"
+            data-rating="<%= v.meta.rating %>"
+            data-photos="<%= v.photoCount %>"
+            data-updated="<%= updated %>"
+            data-search="<%= searchBlob %>"
+            class="vin-row"
+            style="cursor: pointer;"
+            data-href="<%= vehicleUrl %>"
+          >
+            <td><a href="<%= vehicleUrl %>" class="fw-semibold text-decoration-none"><%= v.vin %></a></td>
+            <td>
+              <%- include('../partials/star-rating', { metaUrl: `${vehicleUrl}/meta`, rating: v.meta.rating, status: v.meta.status, aiRating: v.aiRating, bottomLineHtml: v.bottomLineHtml }) %>
+            </td>
+            <td>
+              <% if (v.seller.url) { %>
+                <a href="<%= v.seller.url %>" target="_blank" rel="noopener noreferrer"><%= v.seller.name %> <i class="bi bi-box-arrow-up-right"></i></a>
+              <% } else { %>
+                <%= v.seller.name %>
+              <% } %>
+            </td>
+            <td><% if (v.photoCount > 0) { %><i class="bi bi-image"></i> <%= v.photoCount %><% } %></td>
+            <td><%= updated %></td>
+            <td class="text-truncate" style="max-width: 320px;"><%= v.bottomLine %></td>
+            <td>
+              <button type="button" class="btn btn-sm btn-outline-danger"
+                data-delete-url="<%= vehicleUrl %>"
+                data-delete-name="<%= v.vin %>"
+                data-delete-context="row"
+                data-delete-row-selector="tr"
+                title="Delete this vehicle"
+              >
+                <i class="bi bi-trash"></i>
+              </button>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="text-muted small" id="vehicleEmptyState" style="display: none;">No vehicles match your search.</p>
 <% } %>
+
+<script src="/js/vehicle-year.js"></script>
+<script src="/js/rating.js"></script>
+<script src="/js/popovers.js"></script>

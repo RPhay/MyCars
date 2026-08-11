@@ -14,5 +14,6 @@ Two independent implementations of the same research logic share one file-based 
 @references/car-sites.md
 @references/general-dealership-review-sites.md
 @references/car-review-sites.md
+@references/uix-standards.md
 
 Update this file as real code, commands, and architecture are introduced.

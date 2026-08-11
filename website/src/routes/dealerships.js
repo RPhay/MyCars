@@ -1,5 +1,13 @@
 import { Router } from 'express';
-import { listDealerships, getDealership } from '../services/researchStore.js';
+import {
+  listDealerships,
+  getDealership,
+  deleteDealership,
+  setDealershipMeta,
+  addDealershipCorrespondence,
+  deleteDealershipCorrespondence,
+  createDealershipStub,
+} from '../services/researchStore.js';
 
 const router = Router();
 
@@ -8,6 +16,18 @@ router.get('/', async (req, res, next) => {
     const dealerships = await listDealerships();
     res.render('pages/dealership-list', { title: 'Dealerships', dealerships });
   } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/', async (req, res, next) => {
+  try {
+    const domain = await createDealershipStub(req.body.name, req.body.url);
+    res.json({ domain });
+  } catch (err) {
+    if (err.message.includes('required') || err.message.includes('already in the list')) {
+      return res.status(400).json({ error: err.message });
+    }
     next(err);
   }
 });
@@ -24,6 +44,48 @@ router.get('/:domain', async (req, res, next) => {
     if (err.code === 'ENOENT') {
       return res.status(404).render('pages/404', { title: 'Not Found' });
     }
+    next(err);
+  }
+});
+
+router.put('/:domain/meta', async (req, res, next) => {
+  try {
+    const meta = await setDealershipMeta(req.params.domain, req.body);
+    res.json(meta);
+  } catch (err) {
+    if (err.message === 'Invalid rating' || err.message === 'Invalid status' || err.message === 'Invalid notes') {
+      return res.status(400).json({ error: err.message });
+    }
+    next(err);
+  }
+});
+
+router.post('/:domain/correspondence', async (req, res, next) => {
+  try {
+    const entry = await addDealershipCorrespondence(req.params.domain, req.body);
+    res.json(entry);
+  } catch (err) {
+    if (err.message.startsWith('Invalid')) {
+      return res.status(400).json({ error: err.message });
+    }
+    next(err);
+  }
+});
+
+router.delete('/:domain/correspondence/:entryId', async (req, res, next) => {
+  try {
+    await deleteDealershipCorrespondence(req.params.domain, req.params.entryId);
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.delete('/:domain', async (req, res, next) => {
+  try {
+    await deleteDealership(req.params.domain);
+    res.json({ ok: true });
+  } catch (err) {
     next(err);
   }
 });

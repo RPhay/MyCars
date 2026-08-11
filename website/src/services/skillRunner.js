@@ -28,12 +28,20 @@ function buildArgs(prompt) {
 export function startRun(prompt) {
   const id = randomUUID();
   const emitter = new EventEmitter();
-  const record = { emitter, buffer: [], done: false, exitCode: null, error: null, child: null };
+  // `prompt` is kept around so a failed run can offer it back as a ready-to-
+  // paste "run this in the CLI instead" command — for a skill run it's
+  // already the exact text a terminal `claude -p "..."` invocation would use.
+  const record = { emitter, buffer: [], done: false, exitCode: null, error: null, child: null, prompt };
   runs.set(id, record);
 
   const child = spawn('claude', buildArgs(prompt), {
     cwd: config.projectRoot,
     env: process.env,
+    // Explicitly closed, not left as a dangling open pipe (Node's default
+    // when stdio isn't specified) — `claude -p` waits to see whether
+    // anything's coming down stdin before proceeding, which otherwise shows
+    // up as a several-second "no stdin data received" stall on every run.
+    stdio: ['ignore', 'pipe', 'pipe'],
   });
   record.child = child;
 

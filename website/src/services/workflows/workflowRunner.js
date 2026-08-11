@@ -33,6 +33,9 @@ export function startWorkflow(workflowFn, input) {
     cancelled: false,
     pendingAnswer: null,
     controller,
+    // Kept around so a failed run can offer "run this in the CLI instead"
+    // with the actual input filled in, not just generic advice.
+    input,
   };
   runs.set(id, record);
 

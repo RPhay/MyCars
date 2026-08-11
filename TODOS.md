@@ -9,6 +9,9 @@ General:
 - if referenced sites have pulic api's, code against those.
 - I want to be able to tell the tool to go out, check ads to see if specific cars are still available, if so mark any price drops, and create reports.  Show me a detailed history of each to give me a sense what dealerships are willing to wiggle on.
 - Add a dream car page where I can add in a table the list of make/model[/years] of all the one's I'm primarily keeping my eyes on
+- I want to be able to have a checklist of things that are musts and nice to have.  Things like convertible is nice to have or a +.  I'm going to have a handful of them.  Another example + is ApplePlay.
+- For any given car type, I want to be able to genearate a checklist of all the things I want to check when test driving.  For example, on a convertible I need to drive it with the top both up and down.
+ - For each vehicle, specific or otherwise, I want an area to save an insurance cost estimate.
 
 Dealership page:
 
@@ -20,7 +23,7 @@ Dealership page:
 - I should be able to rate dealerships with a star rating, as a favourite, as an avoid at all costs
 - I should be able to add my own notes to dealerships as well as include correspondence with them, how and when that happened, who it was with, etc., what car, if applicable, the conversation(s) were about etc.
 - For dealership analysis include how much they're willing to haggle, lower prices, etc.
-
+- Want links to reviews I've made on Yelp, Google, etc.
 
 Vehicles page:
 - I want the ability to add as well as research a vehicle, whether it be by make/model/year, or a specific one for sale from the page.
@@ -35,6 +38,8 @@ Vehicles page:
 - Don't need to show the link on the specific vehicle page, that should be a pretty hyperlink icon maybe to the left of the title
 - If there's a carfax report the link to it should also be on the page, accessible via an icon
 - for cars w/ make/model or make/model/year I want to be able to do an updated search that will find new ones I haven't seen yet, ask me If I want to add them to my r&d
+- For vehicle analysis also include depreciation analysis.
+- Add ability to do a side by side analyzis of two or more vehicles or all vehicles that have the same [year]/[make]/(optional[Year])
 
 Market Analysis:
 - There should be a capaility to do full market analysis on a vehicle by make/model/year or a specific one

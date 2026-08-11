@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { startWorkflow, answerQuestion, cancelWorkflow, getWorkflowRun } from '../services/workflows/workflowRunner.js';
 import { vehicleWorkflow } from '../services/workflows/vehicleWorkflow.js';
 import { startRun, getRun, cancelRun } from '../services/skillRunner.js';
+import { friendlyError, friendlyExitError } from '../services/friendlyError.js';
 
 const router = Router();
 
@@ -55,7 +56,26 @@ router.get('/runs/:id/events', (req, res) => {
   res.setHeader('Connection', 'keep-alive');
   res.flushHeaders();
 
-  const send = (event, data) => res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+  // Both producers' raw error text (a fetch status, a claude exit code, ...)
+  // gets translated to plain English + a concrete next step here, in this
+  // one normalization point, rather than leaking "Fetch failed (403) for
+  // https://..." straight into the modal — see friendlyError.js. cliPrompt is
+  // a ready-to-paste `claude -p "..."` equivalent for the same task, so a
+  // failure (most commonly bot-detection this app's plain fetch can't get
+  // past) offers a real next step, not just "try the CLI" with nothing to
+  // paste in. For a skill run it's literally the prompt already used to
+  // launch it; for the hard-coded vehicle workflow, the nearest CLI
+  // equivalent is carfax-analyzer on the same input.
+  const cliPrompt = workflowRecord
+    ? `Use the carfax-analyzer skill to analyze this vehicle: ${workflowRecord.input?.input || ''}`
+    : skillRecord.prompt;
+
+  const send = (event, data) => {
+    if (event === 'error') {
+      data = { ...data, ...friendlyError(data.error), cliPrompt };
+    }
+    res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+  };
 
   if (workflowRecord) {
     for (const { event, data } of workflowRecord.buffer) send(event, data);
@@ -67,16 +87,30 @@ router.get('/runs/:id/events', (req, res) => {
     return;
   }
 
-  // skillRunner record: translate its chunk/done shape into the shared vocabulary.
+  // skillRunner record: translate its chunk/done shape into the shared
+  // vocabulary. A non-zero exit with no explicit spawn error still means the
+  // run failed (e.g. the claude CLI hit an unhandled permission prompt or
+  // crashed) — surface that as an error rather than letting the modal read
+  // "exitCode: 1, error: null" as success.
+  const sendSkillDone = (info) => {
+    if (info.exitCode !== 0 && !info.error) {
+      return send('done', { ...info, ...friendlyExitError(info.exitCode), cliPrompt });
+    }
+    if (info.error) {
+      return send('done', { ...info, ...friendlyError(info.error), cliPrompt });
+    }
+    send('done', info);
+  };
+
   for (const chunk of skillRecord.buffer) send('output', chunk);
   if (skillRecord.done) {
-    send('done', { exitCode: skillRecord.exitCode, error: skillRecord.error });
+    sendSkillDone({ exitCode: skillRecord.exitCode, error: skillRecord.error });
     return res.end();
   }
 
   const onChunk = (chunk) => send('output', chunk);
   const onDone = (info) => {
-    send('done', info);
+    sendSkillDone(info);
     res.end();
   };
   skillRecord.emitter.on('chunk', onChunk);

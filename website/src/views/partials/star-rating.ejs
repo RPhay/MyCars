@@ -1,0 +1,55 @@
+<%
+// Shared star-rating widget: fill = the user's own 1-5 rating (click a star
+// to set it, same star again to clear), outline color = this project's own
+// N/5 analysis rating (research-storage.md's "Rating" field) when one
+// exists — red outline through position aiRating, black beyond it, plain
+// muted outline when there's no aiRating (an older record, or a make/model
+// tree node with no analysis.md of its own). Hovering the whole widget pops
+// up the analysis reasoning (bottomLineHtml) when aiRating is present.
+//
+// Locals: metaUrl (required), rating, status, aiRating, bottomLineHtml,
+// large (bool — page-header-sized icons, matching the fs-5 class the
+// standalone detail-page widgets already used before this became a partial).
+const _rating = typeof rating !== 'undefined' ? rating : 0;
+const _status = typeof status !== 'undefined' ? status : 'none';
+const _aiRating = typeof aiRating !== 'undefined' ? aiRating : null;
+const _reason = typeof bottomLineHtml !== 'undefined' ? bottomLineHtml : '';
+const _hasPopover = _aiRating != null && _reason;
+const _size = typeof large !== 'undefined' && large ? ' fs-5' : '';
+%>
+<span class="d-inline-flex align-items-center gap-1"
+  data-meta-url="<%= metaUrl %>" data-rating="<%= _rating %>" data-status="<%= _status %>"
+  <% if (_aiRating != null) { %>data-ai-rating="<%= _aiRating %>"<% } %>
+  <% if (_hasPopover) { %>
+    data-bs-toggle="popover" data-bs-trigger="hover focus" data-bs-placement="top" data-bs-html="true"
+    title="My rating: <%= _aiRating %>/5" data-bs-content="<%= _reason %>" style="cursor: help;"
+  <% } %>
+>
+  <span class="text-nowrap">
+    <% for (let i = 1; i <= 5; i++) {
+      const filled = i <= _rating;
+      // Outline color always encodes the AI rating (red through aiRating,
+      // black beyond it, muted if there's no aiRating at all) independent of
+      // fill — fill (gold) layers on top for a star the user has set, so a
+      // star that's both "mine" and "yours" shows red outline + gold fill
+      // together, not one replacing the other.
+      let outlineColor;
+      if (_aiRating != null && i <= _aiRating) outlineColor = 'text-danger';
+      else if (_aiRating != null) outlineColor = 'text-dark';
+      else outlineColor = 'text-muted';
+    %>
+      <button type="button" class="btn btn-link btn-sm p-0" data-rate="<%= i %>" title="<%= i %> star<%= i > 1 ? 's' : '' %>">
+        <span class="d-inline-block position-relative<%= _size %>" style="width: 1em; height: 1em; vertical-align: -0.125em;">
+          <i class="bi bi-star-fill text-warning position-absolute top-0 start-0" data-star-fill style="opacity: <%= filled ? 1 : 0 %>;"></i>
+          <i class="bi bi-star <%= outlineColor %> position-absolute top-0 start-0" data-star-outline></i>
+        </span>
+      </button>
+    <% } %>
+  </span>
+  <button type="button" class="btn btn-link btn-sm p-0" data-status="favorite" title="Favorite">
+    <i class="bi <%= _status === 'favorite' ? 'bi-heart-fill text-danger' : 'bi-heart text-muted' %><%= _size %>"></i>
+  </button>
+  <button type="button" class="btn btn-link btn-sm p-0" data-status="avoid" title="Avoid">
+    <i class="bi <%= _status === 'avoid' ? 'bi-slash-circle text-danger' : 'bi-slash-circle text-muted' %><%= _size %>"></i>
+  </button>
+</span>

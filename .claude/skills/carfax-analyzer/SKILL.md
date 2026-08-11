@@ -55,11 +55,22 @@ Work through `references/red_flags_checklist.md` and flag every match found in S
 
 Note explicitly what the report **cannot** tell you: it only contains events reported to Carfax by state DMVs, insurers, auctions, service shops, and law enforcement — un-reported accidents, cash-repaired damage, and shops that don't share data (many independent shops) will not appear. Say this in the output; do not imply a clean report means an undamaged car.
 
+## Step 6.5: Assess the asking price
+
+This is about *this specific listing's* price, not general market pricing for the type (that's `vehicle-research`'s Step 6, if an `overview.md` exists for this make/model/year — read it and cite its "Typical pricing" section rather than re-deriving it from scratch when it's already there).
+
+- Search current comparable listings — same or adjacent year/make/model/trim, similar mileage, same general region when the seller's location is known — via the marketplaces in `../../../references/car-sites.md` (Cars.com, CarGurus, Autotrader, KBB listings). A handful of real comparables beats an exhaustive search.
+- Check KBB and/or Edmunds for a typical private-party/dealer-retail price range for this specific year/make/model/trim/mileage/condition, distinct from original MSRP.
+- **Weigh this vehicle's own history against the price**: a below-market price on a car with real red flags (branded title, accident history, short-flip ownership) isn't a deal, it's the market pricing in the risk — say so explicitly rather than treating a low price as purely a positive.
+- **State what THIS car should actually cost, not just the range for a clean example** — the Market range (a typical example of this make/model/year) is not an answer to "is this price fair," since it doesn't account for anything this specific VIN's history found. Apply a concrete adjustment: branded title (salvage/rebuilt/flood/fire) commonly discounts 20-40%+ off clean-market value depending on severity/documentation gaps; meaningful accident history, short-flip ownership, or unresolved service gaps each pull it down further. Give an actual number or range for this vehicle, not just a qualitative "should be discounted."
+- If the seller's asking price isn't available (report supplied standalone with no listing), skip this step and say so rather than guessing at a price.
+- This is prominent, not buried information — Step 8 records it as its own header fields (`Asking price`, `Market range`, `Fair price for this vehicle`), visible immediately at the top of the file, not left as something a reader only finds by reading all the way down to the Market comparison section.
+
 ## Step 7: Produce the analysis
 
 Give the user a structured report with these sections:
 
-1. **Bottom line** — one paragraph: buy-worthy / proceed with inspection / walk away, and the single biggest reason why.
+1. **Bottom line** — one paragraph, leading with **Rating: N/5** per `research-storage.md`'s rating rubric, then buy-worthy / proceed with inspection / walk away, and the single biggest reason why.
 2. **Title & brand issues** — flagged or none.
 3. **Accident & damage history** — chronological, with severity assessment.
 4. **Odometer integrity** — chronological readings; flag any rollback, gap, or implausible annual mileage.
@@ -67,13 +78,20 @@ Give the user a structured report with these sections:
 6. **Service & maintenance** — regularity, gaps, major repairs shortly before a sale (flag: repaired-to-sell pattern).
 7. **Open recalls** — list any from the report *and* from the Step 4 NHTSA lookup, flag any discrepancy between the two, and note they should be completed free at a dealer regardless of purchase decision.
 8. **What this report can't tell you** — the blind spots from Step 6, whether type-level research exists yet for this make/model/year (Step 3), and the concrete next step (independent pre-purchase mechanical inspection, VIN check against the physical dash/door-jamb, title check with the state DMV) appropriate to what was found.
+9. **Market comparison & pricing** — from Step 6.5: the comparable listings found, the KBB/Edmunds typical range, whether the asking price sits above/below/within that range, and a concrete fair-price figure/range for *this specific vehicle* once its own history is priced in — not just the generic range, which doesn't by itself answer whether this asking price is fair.
+10. **In-person checklist** — a bullet list, grouped under three subheadings, tailored to what this specific report actually found (not a generic boilerplate checklist reused across every vehicle):
+   - **Look for in person**: physical signs tied to this report's own findings (e.g. mismatched paint/panel gaps if any accident was reported, rust/water lines if flood history is even suspected, tire wear patterns, uneven trim if a rebuild is in the history).
+   - **On a test drive**: behaviors specifically worth confirming given this report (e.g. pulling/vibration if front-end damage was reported, transmission behavior if service records show none, warning lights, unusual noises from whatever was flagged in Service & maintenance).
+   - **Ask the dealership**: direct questions this specific report raises but can't answer (e.g. who performed a rebuild and to what standard, why an ownership period was unusually short, whether an open recall will be completed before sale).
 
 Cite the specific dates/mileages/events from the report for every flag raised — don't assert a red flag without pointing to the data line that supports it.
 
 ## Step 8: Persist the research
 
-Write/update `vehicles/<make>/<model>/<year>/<VIN>/analysis.md` per `../../../references/research-storage.md` (paths relative to the project root) with this analysis. Capture the seller as whatever listing page led to the report — the dealer name/URL from Step 1's page-with-a-link case, or "not provided" if the user supplied the report/PDF standalone with no listing context. If `dealerships/<domain>/analysis.md` already exists for that seller, link to it from the vehicle file's header.
+Write/update `vehicles/<make>/<model>/<year>/<VIN>/analysis.md` per `../../../references/research-storage.md` (paths relative to the project root) with this analysis, including the `Rating: N/5` header field from Step 7 and the `Asking price`/`Market range`/`Fair price for this vehicle` header fields from Step 6.5 (omit both together if Step 6.5 was skipped). Capture the seller as whatever listing page led to the report — the dealer name/URL from Step 1's page-with-a-link case, or "not provided" if the user supplied the report/PDF standalone with no listing context. If `dealerships/<domain>/analysis.md` already exists for that seller, link to it from the vehicle file's header. Also record the `History report` field with the report's own URL — Step 1's "URL to a web report page" or "URL to a page that is not the report itself" cases (the resolved report link, not the original listing/dealer page it was found on). Omit the field if the report was supplied as a local PDF path or standalone text with no URL.
 
 Also download every photo found on the seller's listing page (Step 1's page-with-a-link case, or the report page itself if it shows the vehicle) to `vehicles/<make>/<model>/<year>/<VIN>/photos/`, per `research-storage.md`'s photo mechanism — identify image URLs via WebFetch's page analysis or the claude-in-chrome tools, then `curl -sL -o photos/NN.<ext>` each one. Skip this if the report was supplied standalone with no listing/photos available.
+
+If the report itself came from a user-supplied file (Step 1's local-PDF case) rather than a URL, save a copy of it to `vehicles/<make>/<model>/<year>/<VIN>/report.<ext>` per `research-storage.md`'s "Source reports" convention — don't just read it and discard it.
 
 This persistence step happens on every run, not only when invoked from another skill.
