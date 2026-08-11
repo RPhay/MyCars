@@ -148,7 +148,11 @@
       statusEl.className = 'fw-semibold mb-2 text-success';
       if (data.result?.path) {
         resultEl.classList.remove('d-none');
-        resultEl.innerHTML = `Saved to <code>${data.result.path}</code>. Reload the page to see it.`;
+        resultEl.innerHTML = `Saved to <code>${data.result.path}</code>.`;
+        // Auto-reload page after 2 seconds to show updated ratings
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
       }
     } else if (state === 'cancelled') {
       statusEl.textContent = 'Cancelled.';
