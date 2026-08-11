@@ -14,7 +14,38 @@ const router = Router();
 router.get('/', async (req, res, next) => {
   try {
     const dealerships = await listDealerships();
-    res.render('pages/dealership-list', { title: 'Dealerships', dealerships });
+
+    // Group dealerships by state and city
+    const grouped = {};
+    dealerships.forEach((d) => {
+      const location = d.fields['Address'] || '';
+      const match = location.match(/^(.*),\s*([A-Z]{2})(?:\s*(\d{5}))?/);
+      const city = match ? match[1].trim() : 'Unknown';
+      const state = match ? match[2] : 'Unknown';
+
+      if (!grouped[state]) grouped[state] = {};
+      if (!grouped[state][city]) grouped[state][city] = [];
+      grouped[state][city].push(d);
+    });
+
+    // Sort states and cities
+    const sortedGrouped = {};
+    Object.keys(grouped)
+      .sort()
+      .forEach((state) => {
+        sortedGrouped[state] = {};
+        Object.keys(grouped[state])
+          .sort()
+          .forEach((city) => {
+            sortedGrouped[state][city] = grouped[state][city];
+          });
+      });
+
+    res.render('pages/dealership-list', {
+      title: 'Dealerships',
+      dealerships,
+      grouped: sortedGrouped,
+    });
   } catch (err) {
     next(err);
   }

@@ -47,77 +47,112 @@
   </div>
 
   <div class="table-responsive">
-    <table class="table table-hover table-bordered align-middle" id="dealershipTable">
+    <table class="table table-hover table-bordered align-middle" id="dealershipTree">
       <thead>
         <tr>
-          <th scope="col" data-sort="name" data-type="string" role="button">Name <i class="bi sort-icon"></i></th>
-          <th scope="col" data-sort="rating" data-type="number" role="button">Rating <i class="bi sort-icon"></i></th>
-          <th scope="col" data-sort="location" data-type="string" role="button">Location <i class="bi sort-icon"></i></th>
-          <th scope="col" data-sort="updated" data-type="string" role="button">Last updated <i class="bi sort-icon"></i></th>
-          <th scope="col">Actions</th>
+          <th scope="col">Name <i class="bi sort-icon"></i></th>
+          <th scope="col">Rating</th>
+          <th scope="col">Location</th>
+          <th scope="col">Last updated</th>
+          <th scope="col" class="visually-hidden">Actions</th>
         </tr>
       </thead>
       <tbody>
-        <% dealerships.forEach(d => {
-          const location = d.fields['Address'] || '';
-          const updated = d.fields['Last updated'] || '';
-          const site = d.fields['Site'] || '';
-          const searchBlob = [d.title, location, d.bottomLine, d.domain].join(' ').toLowerCase();
-        %>
-          <tr
-            data-name="<%= d.title.toLowerCase() %>"
-            data-location="<%= location.toLowerCase() %>"
-            data-updated="<%= updated %>"
-            data-rating="<%= d.meta.rating %>"
-            data-search="<%= searchBlob %>"
-            class="dealership-row"
-            style="cursor: pointer;"
-            data-href="/dealerships/<%= encodeURIComponent(d.domain) %>"
-          >
+        <% Object.entries(grouped).forEach(([state, cities]) => { %>
+          <!-- State Row -->
+          <tr class="tree-row state-row" data-state="<%= state %>">
             <td>
-              <a href="/dealerships/<%= encodeURIComponent(d.domain) %>" class="fw-semibold text-decoration-none"><%= d.title %></a>
-              <% if (site) { %>
-                <a href="<%= site %>" target="_blank" rel="noopener noreferrer" title="<%= site %>" class="ms-1">
-                  <i class="bi bi-box-arrow-up-right"></i>
-                </a>
-              <% } %>
-            </td>
-            <td>
-              <%- include('../partials/star-rating', {
-                metaUrl: `/dealerships/${encodeURIComponent(d.domain)}/meta`,
-                rating: d.meta.rating,
-                status: d.meta.status,
-                aiRating: d.aiRating,
-                bottomLineHtml: d.bottomLineHtml,
-              }) %>
-            </td>
-            <td><%= location %></td>
-            <td><%= updated %></td>
-            <td>
-              <button type="button" class="btn btn-sm btn-outline-primary"
-                data-research="skill" data-skill="dealership-analyzer" data-url="<%= site %>"
-                title="<%= d.aiRating != null ? 'Re-research' : 'Research' %> <%= d.title %>"
-              >
-                <i class="bi bi-arrow-repeat"></i>
+              <button class="btn btn-link p-0 text-decoration-none chevron-toggle" style="cursor: pointer;">
+                <i class="bi bi-chevron-right"></i>
               </button>
-              <button type="button" class="btn btn-sm btn-outline-danger"
-                data-delete-url="/dealerships/<%= encodeURIComponent(d.domain) %>"
-                data-delete-name="<%= d.title %>"
-                data-delete-context="row"
-                data-delete-row-selector="tr"
-                title="Delete <%= d.title %>"
-              >
-                <i class="bi bi-trash"></i>
-              </button>
+              <strong><%= state %></strong>
+              <span class="text-muted ms-2">(<%= Object.values(cities).flat().length %> dealerships)</span>
             </td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
           </tr>
-        <% }) %>
+
+          <% Object.entries(cities).forEach(([city, dealershipList]) => { %>
+            <!-- City Row -->
+            <tr class="tree-row city-row" data-city="<%= city %>" data-state="<%= state %>" style="display: none;">
+              <td style="padding-left: 2rem;">
+                <i class="bi bi-geo-alt-fill text-muted"></i>
+                <strong><%= city %></strong>
+                <span class="text-muted ms-2">(<%= dealershipList.length %>)</span>
+              </td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+            </tr>
+
+            <% dealershipList.forEach((d) => {
+              const location = d.fields['Address'] || '';
+              const updated = d.fields['Last updated'] || '';
+              const site = d.fields['Site'] || '';
+              const searchBlob = [d.title, location, d.bottomLine, d.domain, state, city].join(' ').toLowerCase();
+            %>
+              <!-- Dealership Row -->
+              <tr
+                class="dealership-row tree-row"
+                data-state="<%= state %>"
+                data-city="<%= city %>"
+                data-name="<%= d.title.toLowerCase() %>"
+                data-location="<%= location.toLowerCase() %>"
+                data-updated="<%= updated %>"
+                data-rating="<%= d.meta.rating %>"
+                data-search="<%= searchBlob %>"
+                data-href="/dealerships/<%= encodeURIComponent(d.domain) %>"
+                style="display: none; cursor: pointer;"
+              >
+                <td style="padding-left: 4rem;">
+                  <a href="/dealerships/<%= encodeURIComponent(d.domain) %>" class="fw-semibold text-decoration-none"><%= d.title %></a>
+                  <% if (site) { %>
+                    <a href="<%= site %>" target="_blank" rel="noopener noreferrer" title="<%= site %>" class="ms-1">
+                      <i class="bi bi-box-arrow-up-right"></i>
+                    </a>
+                  <% } %>
+                </td>
+                <td>
+                  <%- include('../partials/star-rating', {
+                    metaUrl: `/dealerships/${encodeURIComponent(d.domain)}/meta`,
+                    rating: d.meta.rating,
+                    status: d.meta.status,
+                    aiRating: d.aiRating,
+                    bottomLineHtml: d.bottomLineHtml,
+                  }) %>
+                </td>
+                <td><%= location %></td>
+                <td><%= updated %></td>
+                <td>
+                  <button type="button" class="btn btn-sm btn-outline-primary"
+                    data-research="skill" data-skill="dealership-analyzer" data-url="<%= site %>"
+                    title="<%= d.aiRating != null ? 'Re-research' : 'Research' %> <%= d.title %>"
+                  >
+                    <i class="bi bi-arrow-repeat"></i>
+                  </button>
+                  <button type="button" class="btn btn-sm btn-outline-danger"
+                    data-delete-url="/dealerships/<%= encodeURIComponent(d.domain) %>"
+                    data-delete-name="<%= d.title %>"
+                    data-delete-context="row"
+                    data-delete-row-selector="tr"
+                    title="Delete <%= d.title %>"
+                  >
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </td>
+              </tr>
+            <% }); %>
+          <% }); %>
+        <% }); %>
       </tbody>
     </table>
   </div>
 
   <p class="text-muted small" id="dealershipEmptyState" style="display: none;">No dealerships match your search.</p>
-  <script src="/js/dealership-table.js"></script>
+  <script src="/js/dealership-tree.js"></script>
   <script src="/js/rating.js"></script>
   <script src="/js/popovers.js"></script>
 <% } %>
