@@ -240,7 +240,7 @@ function parseSeller(raw) {
 // possible."
 function parseAiRating(raw) {
   if (!raw) return null;
-  const match = raw.match(/^([1-5])\s*\/\s*5$/);
+  const match = raw.match(/^([1-5])\s*\/\s*5/);
   return match ? Number(match[1]) : null;
 }
 
