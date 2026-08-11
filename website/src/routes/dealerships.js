@@ -18,10 +18,37 @@ router.get('/', async (req, res, next) => {
     // Group dealerships by state and city
     const grouped = {};
     dealerships.forEach((d) => {
-      const location = d.fields['Address'] || '';
-      const match = location.match(/^(.*),\s*([A-Z]{2})(?:\s*(\d{5}))?/);
-      const city = match ? match[1].trim() : 'Unknown';
-      const state = match ? match[2] : 'Unknown';
+      let address = d.fields['Address'] || '';
+      let city = 'Unknown';
+      let state = 'Unknown';
+
+      if (address) {
+        // Try to parse: "City, State" or "Address, City, State ZIP" format
+        const parts = address.split(',').map((p) => p.trim());
+
+        if (parts.length >= 2) {
+          // Standard format: "City, State" or "City, State ZIP"
+          const lastPart = parts[parts.length - 1]; // State or "State ZIP"
+          const secondLastPart = parts[parts.length - 2]; // City
+
+          const stateMatch = lastPart.match(/^([A-Z]{2})/);
+          if (stateMatch) {
+            state = stateMatch[1];
+            city = secondLastPart;
+          } else {
+            // Fallback: assume last part is city, second-to-last is state
+            city = lastPart;
+            state = secondLastPart;
+          }
+        } else if (parts.length === 1) {
+          // Single part - could be "City, State" with no comma or just city
+          const match = address.match(/^(.+?),\s*([A-Z]{2})(?:\s*\d{5})?$/);
+          if (match) {
+            city = match[1].trim();
+            state = match[2];
+          }
+        }
+      }
 
       if (!grouped[state]) grouped[state] = {};
       if (!grouped[state][city]) grouped[state][city] = [];
