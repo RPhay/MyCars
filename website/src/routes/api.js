@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { startWorkflow, answerQuestion, cancelWorkflow, getWorkflowRun } from '../services/workflows/workflowRunner.js';
 import { vehicleWorkflow } from '../services/workflows/vehicleWorkflow.js';
+import { findAllWorkflow } from '../services/workflows/findAllWorkflow.js';
 import { startRun, getRun, cancelRun } from '../services/skillRunner.js';
 import { friendlyError, friendlyExitError } from '../services/friendlyError.js';
 
@@ -18,6 +19,19 @@ router.post('/runs/vehicle', (req, res) => {
   if (!input) return res.status(400).json({ error: 'Enter a VIN or a URL.' });
   const id = startWorkflow(vehicleWorkflow, { input });
   res.json({ id, kind: 'workflow' });
+});
+
+router.post('/runs/workflow', (req, res) => {
+  const { workflow, make, model } = req.body;
+  if (workflow === 'find-all') {
+    if (!make || !model) {
+      return res.status(400).json({ error: 'make and model are required.' });
+    }
+    const id = startWorkflow(findAllWorkflow, { make, model });
+    res.json({ id, kind: 'workflow' });
+  } else {
+    res.status(400).json({ error: 'Unknown workflow.' });
+  }
 });
 
 router.post('/runs/skill', (req, res) => {

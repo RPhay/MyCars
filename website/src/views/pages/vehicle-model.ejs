@@ -9,6 +9,11 @@
 <div class="d-flex justify-content-between align-items-center">
   <h1><%= make %> <%= model %></h1>
   <div class="d-flex gap-2">
+    <button type="button" class="btn btn-outline-success btn-sm"
+      data-research="workflow" data-workflow="find-all"
+      data-make="<%= make %>" data-model="<%= model %>">
+      <i class="bi bi-search"></i> Find All
+    </button>
     <button type="button" class="btn btn-outline-primary btn-sm"
       data-research="skill" data-skill="vehicle-research"
       data-make="<%= make %>" data-model="<%= model %>">

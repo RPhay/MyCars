@@ -244,6 +244,17 @@
     connect(data.id);
   }
 
+  async function beginWorkflowRun(payload) {
+    const res = await fetch('/api/runs/workflow', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok) return finish('error', data);
+    connect(data.id);
+  }
+
   async function handleTrigger(el) {
     const kind = el.dataset.research;
 
@@ -253,6 +264,20 @@
       const input = el.dataset.input || (await askQuestion({ kind: 'text', text: 'VIN or vehicle URL?', placeholder: 'VIN or URL...' }));
       beginVehicleRun(input);
       return;
+    }
+
+    if (kind === 'workflow') {
+      const workflow = el.dataset.workflow;
+      if (workflow === 'find-all') {
+        resetModal(`Searching for ${el.dataset.make} ${el.dataset.model}…`);
+        bsModal.show();
+        beginWorkflowRun({
+          workflow,
+          make: el.dataset.make,
+          model: el.dataset.model,
+        });
+        return;
+      }
     }
 
     if (kind === 'skill') {
