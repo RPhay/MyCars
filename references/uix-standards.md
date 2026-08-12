@@ -54,6 +54,8 @@ Favorite and avoid are mutually exclusive — setting one clears the other. Deli
 
 Star scale (1–5, independent of favorite/avoid) uses `bi-star-fill` (filled, `text-warning`) / `bi-star` (empty, `text-muted`) per position. Clicking the currently-set star again clears the rating to 0.
 
+**Spot-check flag** (`meta.json`'s `spotCheck` field, VIN level only): `bi-binoculars-fill` (`text-info`) when set / `bi-binoculars` (`text-muted`) when not, leftmost icon in the star-rating widget — but only on call sites for a specific vehicle (VIN detail page, and VIN rows in the year/model/make/flattened-tree tables), never on a make/model/year aggregate row or a dealership row, since the flag's meaning ("researched independently as part of a dealership inventory spot-check, not a car I'm looking to buy") only makes sense for one physical vehicle. Set automatically by `dealership-analyzer`'s Step 7 spot-check; user-toggleable off (or back on) by clicking it, same click-to-toggle pattern as favorite/avoid.
+
 **Other icon roles:**
 
 - External link indicator: `bi-box-arrow-up-right`, appended after any link leaving the site.

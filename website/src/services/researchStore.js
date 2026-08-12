@@ -145,7 +145,7 @@ async function readResearchFile(filePath, context = {}) {
 // Plain rating/status/notes fields only — correspondence (dealership-only,
 // see below) is handled separately so this default can't leak a shared
 // array reference across calls (spreading META_DEFAULT is a shallow copy).
-const META_DEFAULT = { rating: 0, status: 'none', notes: '' };
+const META_DEFAULT = { rating: 0, status: 'none', notes: '', spotCheck: false };
 const META_STATUSES = new Set(['none', 'favorite', 'avoid']);
 const CORRESPONDENCE_METHODS = new Set(['Phone', 'Email', 'In-person', 'Text', 'Other']);
 
@@ -167,6 +167,7 @@ async function readMeta(dir) {
       rating: Number.isInteger(rating) && rating >= 0 && rating <= 5 ? rating : 0,
       status: META_STATUSES.has(parsed.status) ? parsed.status : 'none',
       notes: typeof parsed.notes === 'string' ? parsed.notes : '',
+      spotCheck: typeof parsed.spotCheck === 'boolean' ? parsed.spotCheck : false,
       correspondence: Array.isArray(parsed.correspondence)
         ? parsed.correspondence.filter((c) => c && typeof c.id === 'string')
         : [],
@@ -208,6 +209,12 @@ async function writeMeta(baseDir, segments, patch) {
       throw new Error('Invalid notes');
     }
     merged.notes = patch.notes;
+  }
+  if (patch.spotCheck !== undefined) {
+    if (typeof patch.spotCheck !== 'boolean') {
+      throw new Error('Invalid spotCheck');
+    }
+    merged.spotCheck = patch.spotCheck;
   }
 
   await fs.mkdir(dir, { recursive: true });

@@ -121,7 +121,7 @@
                     <% } %>
                   </td>
                   <td>
-                    <%- include('../partials/star-rating', { metaUrl: `${vehicleUrl}/meta`, rating: v.meta.rating, status: v.meta.status, aiRating: v.aiRating, bottomLineHtml: v.bottomLineHtml }) %>
+                    <%- include('../partials/star-rating', { metaUrl: `${vehicleUrl}/meta`, rating: v.meta.rating, status: v.meta.status, aiRating: v.aiRating, bottomLineHtml: v.bottomLineHtml, showSpotCheck: true, spotCheck: v.meta.spotCheck }) %>
                   </td>
                   <td>
                     <button type="button" class="btn btn-sm btn-outline-danger row-delete"

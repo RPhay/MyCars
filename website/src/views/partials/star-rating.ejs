@@ -9,13 +9,21 @@
 //
 // Locals: metaUrl (required), rating, status, aiRating, bottomLineHtml,
 // large (bool — page-header-sized icons, matching the fs-5 class the
-// standalone detail-page widgets already used before this became a partial).
+// standalone detail-page widgets already used before this became a partial),
+// spotCheck (bool, meta.json's own field) + showSpotCheck (bool — only VIN-
+// level call sites pass true; the flag itself only ever means "this specific
+// vehicle was researched as a dealership-analyzer inventory spot-check, not
+// something being considered for purchase," which doesn't apply to a
+// make/model/year aggregate row or a dealership row, so those call sites
+// simply don't opt in rather than the partial hiding it conditionally).
 const _rating = typeof rating !== 'undefined' ? rating : 0;
 const _status = typeof status !== 'undefined' ? status : 'none';
 const _aiRating = typeof aiRating !== 'undefined' ? aiRating : null;
 const _reason = typeof bottomLineHtml !== 'undefined' ? bottomLineHtml : '';
 const _hasPopover = _aiRating != null && _reason;
 const _size = typeof large !== 'undefined' && large ? ' fs-5' : '';
+const _showSpotCheck = typeof showSpotCheck !== 'undefined' && showSpotCheck;
+const _spotCheck = typeof spotCheck !== 'undefined' && spotCheck;
 %>
 <span class="d-inline-flex align-items-center gap-1"
   data-meta-url="<%= metaUrl %>" data-rating="<%= _rating %>" data-status="<%= _status %>"
@@ -25,6 +33,13 @@ const _size = typeof large !== 'undefined' && large ? ' fs-5' : '';
     title="My rating: <%= _aiRating %>/5" data-bs-content="<%= _reason %>" style="cursor: help;"
   <% } %>
 >
+  <% if (_showSpotCheck) { %>
+    <button type="button" class="btn btn-link btn-sm p-0" data-spot-check-toggle
+      title="<%= _spotCheck ? 'Dealership spot-check — not a car I\'m looking to buy (click to unmark)' : 'Mark as a dealership spot-check — not a car I\'m looking to buy' %>"
+      data-spot-check="<%= _spotCheck ? '1' : '0' %>">
+      <i class="bi <%= _spotCheck ? 'bi-binoculars-fill text-info' : 'bi-binoculars text-muted' %><%= _size %>"></i>
+    </button>
+  <% } %>
   <span class="text-nowrap">
     <% for (let i = 1; i <= 5; i++) {
       const filled = i <= _rating;

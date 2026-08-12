@@ -46,6 +46,15 @@
     if (avoidIcon) avoidIcon.className = (status === 'avoid' ? 'bi bi-slash-circle text-danger' : 'bi bi-slash-circle text-muted') + sizeClass(avoidIcon);
   }
 
+  function renderSpotCheck(btn, spotCheck) {
+    const icon = btn.querySelector('i');
+    if (icon) icon.className = (spotCheck ? 'bi bi-binoculars-fill text-info' : 'bi bi-binoculars text-muted') + sizeClass(icon);
+    btn.dataset.spotCheck = spotCheck ? '1' : '0';
+    btn.title = spotCheck
+      ? "Dealership spot-check — not a car I'm looking to buy (click to unmark)"
+      : "Mark as a dealership spot-check — not a car I'm looking to buy";
+  }
+
   // Sortable tables (dealership-table.js) sort off data-rating on the <tr>
   // itself, separate from this widget's own state — keep both in sync.
   function syncRowDataset(container, key, value) {
@@ -56,9 +65,10 @@
   document.addEventListener('click', async (e) => {
     const rateBtn = e.target.closest('[data-rate]');
     const statusBtn = e.target.closest('[data-status]');
-    if (!rateBtn && !statusBtn) return;
+    const spotCheckBtn = e.target.closest('[data-spot-check-toggle]');
+    if (!rateBtn && !statusBtn && !spotCheckBtn) return;
 
-    const container = (rateBtn || statusBtn).closest('[data-meta-url]');
+    const container = (rateBtn || statusBtn || spotCheckBtn).closest('[data-meta-url]');
     if (!container) return;
     const metaUrl = container.dataset.metaUrl;
 
@@ -78,6 +88,10 @@
         await putMeta(metaUrl, { rating: Number(container.dataset.rating || 0), status: next });
         container.dataset.status = next;
         renderStatus(container, next);
+      } else if (spotCheckBtn) {
+        const next = spotCheckBtn.dataset.spotCheck !== '1';
+        await putMeta(metaUrl, { spotCheck: next });
+        renderSpotCheck(spotCheckBtn, next);
       }
     } catch {
       // Transient failure (server down, etc.) — icons simply don't update;

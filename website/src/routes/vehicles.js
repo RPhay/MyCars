@@ -149,7 +149,7 @@ router.get('/:make/:model/:year/:vin/photos/:file', async (req, res) => {
 });
 
 function handleMetaError(err, res, next) {
-  if (err.message === 'Invalid rating' || err.message === 'Invalid status' || err.message === 'Invalid notes') {
+  if (err.message === 'Invalid rating' || err.message === 'Invalid status' || err.message === 'Invalid notes' || err.message === 'Invalid spotCheck') {
     return res.status(400).json({ error: err.message });
   }
   next(err);

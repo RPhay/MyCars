@@ -115,7 +115,7 @@
             <td><a href="/vehicles/<%= encodeURIComponent(make) %>/<%= encodeURIComponent(v.model) %>/<%= encodeURIComponent(v.year) %>" class="text-decoration-none"><%= v.year %></a></td>
             <td><a href="<%= vehicleUrl %>" class="fw-semibold text-decoration-none"><%= v.vin %></a></td>
             <td>
-              <%- include('../partials/star-rating', { metaUrl: `${vehicleUrl}/meta`, rating: v.meta.rating, status: v.meta.status, aiRating: v.aiRating, bottomLineHtml: v.bottomLineHtml }) %>
+              <%- include('../partials/star-rating', { metaUrl: `${vehicleUrl}/meta`, rating: v.meta.rating, status: v.meta.status, aiRating: v.aiRating, bottomLineHtml: v.bottomLineHtml, showSpotCheck: true, spotCheck: v.meta.spotCheck }) %>
             </td>
             <td>
               <% if (v.seller.url) { %>
