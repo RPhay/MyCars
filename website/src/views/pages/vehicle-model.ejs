@@ -19,6 +19,9 @@
       data-make="<%= make %>" data-model="<%= model %>">
       <i class="bi bi-arrow-repeat"></i> Research a year of this model
     </button>
+    <button type="button" class="btn btn-outline-info btn-sm" id="comparisonBtn">
+      <i class="bi bi-graph-up"></i> Compare Vehicles
+    </button>
     <button type="button" class="btn btn-outline-danger btn-sm"
       data-delete-url="/vehicles/<%= encodeURIComponent(make) %>/<%= encodeURIComponent(model) %>"
       data-delete-name="<%= make %> <%= model %> (and all its years and vehicles)"
@@ -34,60 +37,6 @@
   <%- include('../partials/star-rating', { metaUrl: `/vehicles/${encodeURIComponent(make)}/${encodeURIComponent(model)}/meta`, rating: meta.rating, status: meta.status, large: true }) %>
 </div>
 
-<h2 class="h5 mt-4">Years</h2>
-<% if (years.length === 0) { %>
-  <p class="text-muted">None researched yet.</p>
-<% } else { %>
-  <div class="mb-3">
-    <label for="yearSearch" class="visually-hidden">Search years</label>
-    <input type="search" id="yearSearch" class="form-control" placeholder="Search years…">
-  </div>
-
-  <div class="table-responsive">
-    <table class="table table-hover table-bordered align-middle" id="yearsTable">
-      <thead>
-        <tr>
-          <th scope="col" style="width: 100%;" data-sort="name" data-type="string" role="button">Year <i class="bi sort-icon"></i></th>
-          <th scope="col" class="text-nowrap" data-sort="rating" data-type="number" role="button">Rating <i class="bi sort-icon"></i></th>
-          <th scope="col" class="visually-hidden text-nowrap">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% years.forEach((y) => {
-          const yearUrl = `/vehicles/${encodeURIComponent(make)}/${encodeURIComponent(model)}/${encodeURIComponent(y.year)}`;
-        %>
-          <tr
-            data-name="<%= y.year.toLowerCase() %>"
-            data-rating="<%= y.meta.rating %>"
-            data-search="<%= y.year.toLowerCase() %>"
-            class="tree-row"
-            style="cursor: pointer;"
-            data-href="<%= yearUrl %>"
-          >
-            <td><a href="<%= yearUrl %>" class="fw-semibold text-decoration-none"><%= y.year %></a></td>
-            <td>
-              <%- include('../partials/star-rating', { metaUrl: `${yearUrl}/meta`, rating: y.meta.rating, status: y.meta.status }) %>
-            </td>
-            <td>
-              <button type="button" class="btn btn-sm btn-outline-danger row-delete"
-                data-delete-url="<%= yearUrl %>"
-                data-delete-name="<%= y.year %> <%= make %> <%= model %> (and all its vehicles)"
-                data-delete-context="page"
-                data-delete-redirect="/vehicles/<%= encodeURIComponent(make) %>/<%= encodeURIComponent(model) %>"
-                title="Delete this year and everything under it"
-              >
-                <i class="bi bi-trash"></i>
-              </button>
-            </td>
-          </tr>
-        <% }) %>
-      </tbody>
-    </table>
-  </div>
-
-  <p class="text-muted small" id="yearEmptyState" style="display: none;">No years match your search.</p>
-<% } %>
-
 <h2 class="h5 mt-4">Vehicles</h2>
 <% if (vins.length === 0) { %>
   <p class="text-muted">None researched yet.</p>
@@ -101,37 +50,77 @@
     <table class="table table-hover table-bordered align-middle" id="modelVinsTable">
       <thead>
         <tr>
+          <th scope="col" style="width: 1.5rem;"></th>
           <th scope="col" data-sort="year" data-type="string" role="button">Year <i class="bi sort-icon"></i></th>
           <th scope="col" data-sort="vin" data-type="string" role="button">VIN <i class="bi sort-icon"></i></th>
           <th scope="col" data-sort="rating" data-type="number" role="button">Rating <i class="bi sort-icon"></i></th>
-          <th scope="col" style="width: 100%;">Seller</th>
+          <th scope="col" data-sort="price" data-type="number" role="button">Asking Price <i class="bi sort-icon"></i></th>
+          <th scope="col" data-sort="city" data-type="string" role="button">City <i class="bi sort-icon"></i></th>
+          <th scope="col" data-sort="state" data-type="string" role="button">State <i class="bi sort-icon"></i></th>
+          <th scope="col" data-sort="seller" data-type="string" role="button">Seller <i class="bi sort-icon"></i></th>
+          <th scope="col" data-sort="adSource" data-type="string" role="button">Ad Source <i class="bi sort-icon"></i></th>
           <th scope="col" class="visually-hidden text-nowrap">Actions</th>
         </tr>
       </thead>
       <tbody>
-        <% vins.forEach((v) => {
+        <% vins.forEach((v, idx) => {
           const vehicleUrl = `/vehicles/${encodeURIComponent(make)}/${encodeURIComponent(model)}/${encodeURIComponent(v.year)}/${encodeURIComponent(v.vin)}`;
-          const searchBlob = [v.year, v.vin, v.seller.name, v.bottomLine].join(' ').toLowerCase();
+          const askingPrice = v.fields['Asking price'] || '';
+          const city = v.fields['City'] || '';
+          const state = v.fields['State'] || '';
+          const adSource = v.adSource || 'Unknown';
+          const sellerName = v.fields['Seller'] ? v.fields['Seller'].split('(')[0].trim() : v.seller.name;
+          const listingUrl = v.listingUrl || v.fields['Listing URL'] || '';
+          const searchBlob = [v.year, v.vin, sellerName, v.bottomLine, city, state, adSource].join(' ').toLowerCase();
+
+          // Determine connector class for multi-posting vehicles
+          const prevVin = idx > 0 ? vins[idx - 1].vin : null;
+          const nextVin = idx < vins.length - 1 ? vins[idx + 1].vin : null;
+          const sameAsPrev = prevVin === v.vin;
+          const sameAsNext = nextVin === v.vin;
+          let connectorClass = 'vin-connector connector-single';
+          if (sameAsPrev || sameAsNext) {
+            if (!sameAsPrev && sameAsNext) connectorClass = 'vin-connector connector-first';
+            else if (sameAsPrev && !sameAsNext) connectorClass = 'vin-connector connector-last';
+            else if (sameAsPrev && sameAsNext) connectorClass = 'vin-connector';
+            else connectorClass = 'vin-connector connector-single';
+          }
         %>
           <tr
             data-year="<%= v.year.toLowerCase() %>"
             data-vin="<%= v.vin.toLowerCase() %>"
             data-rating="<%= v.meta.rating %>"
+            data-price="<%= askingPrice.replace(/[^\d]/g, '') %>"
+            data-city="<%= city.toLowerCase() %>"
+            data-state="<%= state.toLowerCase() %>"
+            data-seller="<%= sellerName.toLowerCase() %>"
+            data-adSource="<%= adSource.toLowerCase() %>"
             data-search="<%= searchBlob %>"
             class="tree-row"
             style="cursor: pointer;"
             data-href="<%= vehicleUrl %>"
           >
+            <td class="<%= connectorClass %>" style="vertical-align: middle;">&nbsp;</td>
             <td><a href="/vehicles/<%= encodeURIComponent(make) %>/<%= encodeURIComponent(model) %>/<%= encodeURIComponent(v.year) %>" class="text-decoration-none"><%= v.year %></a></td>
             <td><a href="<%= vehicleUrl %>" class="fw-semibold text-decoration-none"><%= v.vin %></a></td>
             <td>
               <%- include('../partials/star-rating', { metaUrl: `${vehicleUrl}/meta`, rating: v.meta.rating, status: v.meta.status, aiRating: v.aiRating, bottomLineHtml: v.bottomLineHtml, showSpotCheck: true, spotCheck: v.meta.spotCheck }) %>
             </td>
+            <td><% if (askingPrice) { %>$<%= askingPrice %><% } %></td>
+            <td><%= city %></td>
+            <td><%= state %></td>
             <td>
               <% if (v.seller.url) { %>
-                <a href="<%= v.seller.url %>" target="_blank" rel="noopener noreferrer"><%= v.seller.name %> <i class="bi bi-box-arrow-up-right"></i></a>
+                <a href="<%= v.seller.url %>" target="_blank" rel="noopener noreferrer" style="color: #0066cc; text-decoration: underline;"><%= sellerName %> <i class="bi bi-box-arrow-up-right"></i></a>
               <% } else { %>
-                <%= v.seller.name %>
+                <%= sellerName %>
+              <% } %>
+            </td>
+            <td>
+              <% if (listingUrl) { %>
+                <a href="<%= listingUrl %>" target="_blank" rel="noopener noreferrer" style="color: #0066cc; text-decoration: underline;"><%= adSource %> <i class="bi bi-box-arrow-up-right"></i></a>
+              <% } else { %>
+                <%= adSource %>
               <% } %>
             </td>
             <td>
@@ -154,7 +143,44 @@
   <p class="text-muted small" id="modelVinEmptyState" style="display: none;">No vehicles match your search.</p>
 <% } %>
 
-<script src="/js/simple-tree-table.js" data-table-id="yearsTable" data-search-id="yearSearch" data-empty-id="yearEmptyState"></script>
+<div id="comparison-report" style="display: none; margin-top: 2rem;"></div>
+
 <script src="/js/simple-tree-table.js" data-table-id="modelVinsTable" data-search-id="modelVinSearch" data-empty-id="modelVinEmptyState"></script>
 <script src="/js/rating.js"></script>
 <script src="/js/popovers.js"></script>
+<script>
+document.getElementById('comparisonBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('comparisonBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Loading...';
+
+  try {
+    const scope = '<%= make %>/<%= model %>';
+    const response = await fetch(`/api/compare?scope=${encodeURIComponent(scope)}&isLocal=true`);
+    if (!response.ok) throw new Error(`API error: ${response.statusText}`);
+
+    const data = await response.json();
+
+    // Load and initialize comparison script
+    const script = document.createElement('script');
+    script.src = '/js/vehicle-comparison.js';
+    script.onload = () => {
+      // Create container with data attribute
+      const container = document.getElementById('comparison-report');
+      container.innerHTML = '<div id="comparison-table" data-comparison-scope="<%= make %>/<%= model %>"></div>';
+      container.style.display = 'block';
+
+      // Initialize comparison
+      const comparison = new VehicleComparison('comparison-table');
+      comparison.data = data;
+      comparison.render();
+    };
+    document.head.appendChild(script);
+  } catch (error) {
+    alert('Failed to load comparison: ' + error.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-graph-up"></i> Compare Vehicles';
+  }
+});
+</script>

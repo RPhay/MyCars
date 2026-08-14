@@ -89,6 +89,8 @@ router.get('/:make/:model/:year', async (req, res, next) => {
     }
 
     const photos = await listTypePhotos(make, model, year);
+    const exteriorPhotos = await listTypePhotos(make, model, year, 'exterior');
+    const interiorPhotos = await listTypePhotos(make, model, year, 'interior');
 
     res.render('pages/vehicle-year', {
       title: `${year} ${make} ${model}`,
@@ -98,6 +100,8 @@ router.get('/:make/:model/:year', async (req, res, next) => {
       meta: yearEntry?.meta || { rating: 0, status: 'none' },
       overview,
       photos,
+      exteriorPhotos,
+      interiorPhotos,
       vins: yearEntry?.vins || [],
     });
   } catch (err) {
@@ -110,6 +114,17 @@ router.get('/:make/:model/:year', async (req, res, next) => {
 router.get('/:make/:model/:year/photos/:file', async (req, res) => {
   const { make, model, year, file } = req.params;
   const resolved = resolvePhotoPath(make, model, year, 'photos', file);
+  if (!resolved) return res.status(404).end();
+  res.sendFile(resolved, (err) => {
+    if (err && !res.headersSent) res.status(404).end();
+  });
+});
+
+// Type-level categorized photos (exterior/interior)
+router.get('/:make/:model/:year/photos/:category/:file', async (req, res) => {
+  const { make, model, year, category, file } = req.params;
+  if (category !== 'exterior' && category !== 'interior') return res.status(404).end();
+  const resolved = resolvePhotoPath(make, model, year, 'photos', category, file);
   if (!resolved) return res.status(404).end();
   res.sendFile(resolved, (err) => {
     if (err && !res.headersSent) res.status(404).end();

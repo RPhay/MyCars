@@ -42,8 +42,14 @@
   function renderStatus(container, status) {
     const favIcon = container.querySelector('[data-status="favorite"] i');
     const avoidIcon = container.querySelector('[data-status="avoid"] i');
-    if (favIcon) favIcon.className = (status === 'favorite' ? 'bi bi-heart-fill text-danger' : 'bi bi-heart text-muted') + sizeClass(favIcon);
-    if (avoidIcon) avoidIcon.className = (status === 'avoid' ? 'bi bi-slash-circle text-danger' : 'bi bi-slash-circle text-muted') + sizeClass(avoidIcon);
+    if (favIcon) {
+      const size = (favIcon.className && favIcon.className.includes('fs-5')) ? ' fs-5' : '';
+      favIcon.className = (status === 'favorite' ? 'bi bi-heart-fill text-danger' : 'bi bi-heart text-muted') + size;
+    }
+    if (avoidIcon) {
+      const size = (avoidIcon.className && avoidIcon.className.includes('fs-5')) ? ' fs-5' : '';
+      avoidIcon.className = (status === 'avoid' ? 'bi bi-slash-circle text-danger' : 'bi bi-slash-circle text-muted') + size;
+    }
   }
 
   function renderSpotCheck(btn, spotCheck) {

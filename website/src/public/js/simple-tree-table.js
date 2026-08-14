@@ -69,7 +69,7 @@
 
   tbody.querySelectorAll('tr[data-href]').forEach((row) => {
     row.addEventListener('click', (e) => {
-      if (e.target.closest('a, button')) return;
+      if (e.target.closest('a, button, [data-rate], [data-status], [data-spot-check-toggle]')) return;
       window.location.href = row.dataset.href;
     });
   });

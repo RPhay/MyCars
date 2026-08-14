@@ -236,6 +236,45 @@ function parseSeller(raw) {
   return match ? { name: match[1], url: match[2] } : { name: raw, url: '' };
 }
 
+// Extract domain-based ad source from a listing URL
+function extractAdSource(url) {
+  if (!url) return 'Unknown';
+  try {
+    const domain = new URL(url).hostname.replace(/^www\./, '').split('.')[0];
+    // Capitalize first letter
+    return domain.charAt(0).toUpperCase() + domain.slice(1);
+  } catch {
+    return 'Direct Listing';
+  }
+}
+
+// Parse multi-posting structure from analysis.md body
+// Returns array of posting objects extracted from "Posting-Specific Details" section
+function parsePostings(body) {
+  const postingMatch = body.match(/## Posting-Specific Details\s*\n([\s\S]*?)(\n## |\n?$)/);
+  if (!postingMatch) return [];
+
+  const postingText = postingMatch[1];
+  // Split by "### Posting N:" headers
+  const postingBlocks = postingText.split(/### Posting \d+:/);
+
+  return postingBlocks.slice(1).map((block) => {
+    const lines = block.trim().split('\n');
+    const posting = {};
+
+    for (const line of lines) {
+      const match = line.match(/^- ([^:]+):\s*(.*)$/);
+      if (match) {
+        const key = match[1].trim();
+        const value = match[2].trim();
+        posting[key] = value;
+      }
+    }
+
+    return posting;
+  }).filter((p) => Object.keys(p).length > 0);
+}
+
 // The "Rating: N/5" header field (research-storage.md) is this project's own
 // analysis of the vehicle/dealership — same 1-5 scale as meta.json's
 // user-set star rating (by design, so the site can render both on one set
@@ -443,15 +482,57 @@ export async function listVehicles() {
             const vinMeta = await readMeta(path.join(yearDir, name));
             const seller = parseSeller(parsed.fields['Seller']);
             const dealership = await resolveDealershipInfo(parsed.fields);
-            vins.push({
-              vin: name,
-              photoCount,
-              meta: vinMeta,
-              seller,
-              dealership,
-              aiRating: parseAiRating(parsed.fields['Rating']),
-              ...parsed,
-            });
+            const aiRating = parseAiRating(parsed.fields['Rating']);
+
+            // Parse multi-posting structure
+            const postings = parsePostings(parsed.body);
+
+            if (postings.length > 0) {
+              // Create one row per posting
+              for (const posting of postings) {
+                const listingUrl = posting['Listing URL'] || '';
+                const adSource = extractAdSource(listingUrl);
+                const postingSeller = posting['Seller'] || parsed.fields['Seller'] || '';
+                const postingPrice = posting['Asking price'] || parsed.fields['Asking price'] || '';
+                const postingCity = posting['City'] || parsed.fields['City'] || '';
+                const postingState = posting['State'] || parsed.fields['State'] || '';
+
+                vins.push({
+                  vin: name,
+                  photoCount,
+                  meta: vinMeta,
+                  seller,
+                  dealership,
+                  aiRating,
+                  adSource,
+                  listingUrl,
+                  ...parsed,
+                  fields: {
+                    ...parsed.fields,
+                    'Seller': postingSeller,
+                    'Asking price': postingPrice,
+                    'City': postingCity,
+                    'State': postingState,
+                  },
+                });
+              }
+            } else {
+              // Fallback for old format (no postings section)
+              const listingUrl = parsed.fields['Listing URL'] || '';
+              const adSource = extractAdSource(listingUrl);
+
+              vins.push({
+                vin: name,
+                photoCount,
+                meta: vinMeta,
+                seller,
+                dealership,
+                aiRating,
+                adSource,
+                listingUrl,
+                ...parsed,
+              });
+            }
           } catch {
             // skip a VIN folder with no readable analysis.md
           }
@@ -545,8 +626,11 @@ export async function getVehicle(make, model, year, vin) {
   return { ...parsed, meta, aiRating: parseAiRating(parsed.fields['Rating']) };
 }
 
-export async function listTypePhotos(make, model, year) {
-  return listPhotos(path.join(VEHICLES_DIR, make, model, year, 'photos'));
+export async function listTypePhotos(make, model, year, subdir = '') {
+  const photoPath = subdir
+    ? path.join(VEHICLES_DIR, make, model, year, 'photos', subdir)
+    : path.join(VEHICLES_DIR, make, model, year, 'photos');
+  return listPhotos(photoPath);
 }
 
 export async function listVinPhotos(make, model, year, vin) {

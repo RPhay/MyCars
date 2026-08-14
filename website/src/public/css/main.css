@@ -160,3 +160,29 @@ body {
 .chevron-toggle:hover {
   color: var(--bs-primary);
 }
+
+/* Multi-posting vehicle connector — visual line linking rows for same VIN */
+.vin-connector {
+  width: 1.5rem;
+  padding: 0 0.25rem;
+  text-align: center;
+  position: relative;
+  border-left: 2px solid #dee2e6;
+}
+
+.vin-connector.connector-first {
+  border-top: 2px solid #dee2e6;
+  border-top-left-radius: 0.375rem;
+  border-left: 2px solid #dee2e6;
+}
+
+.vin-connector.connector-last {
+  border-bottom: 2px solid #dee2e6;
+  border-bottom-left-radius: 0.375rem;
+  border-left: 2px solid #dee2e6;
+}
+
+.vin-connector.connector-single {
+  border: none;
+  width: 1.5rem;
+}

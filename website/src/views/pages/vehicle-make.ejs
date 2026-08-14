@@ -7,14 +7,19 @@
 
 <div class="d-flex justify-content-between align-items-center">
   <h1><%= make %></h1>
-  <button type="button" class="btn btn-outline-danger btn-sm"
-    data-delete-url="/vehicles/<%= encodeURIComponent(make) %>"
-    data-delete-name="<%= make %> (and all its models, years, and vehicles)"
-    data-delete-context="page"
-    data-delete-redirect="/vehicles"
-  >
-    <i class="bi bi-trash"></i> Delete <%= make %>
-  </button>
+  <div class="d-flex gap-2">
+    <button type="button" class="btn btn-outline-info btn-sm" id="comparisonBtn">
+      <i class="bi bi-graph-up"></i> Compare Vehicles
+    </button>
+    <button type="button" class="btn btn-outline-danger btn-sm"
+      data-delete-url="/vehicles/<%= encodeURIComponent(make) %>"
+      data-delete-name="<%= make %> (and all its models, years, and vehicles)"
+      data-delete-context="page"
+      data-delete-redirect="/vehicles"
+    >
+      <i class="bi bi-trash"></i> Delete <%= make %>
+    </button>
+  </div>
 </div>
 
 <div class="mb-3">
@@ -88,40 +93,80 @@
     <table class="table table-hover table-bordered align-middle" id="makeVinsTable">
       <thead>
         <tr>
+          <th scope="col" style="width: 1.5rem;"></th>
           <th scope="col" data-sort="model" data-type="string" role="button">Model <i class="bi sort-icon"></i></th>
           <th scope="col" data-sort="year" data-type="string" role="button">Year <i class="bi sort-icon"></i></th>
           <th scope="col" data-sort="vin" data-type="string" role="button">VIN <i class="bi sort-icon"></i></th>
           <th scope="col" data-sort="rating" data-type="number" role="button">Rating <i class="bi sort-icon"></i></th>
-          <th scope="col" style="width: 100%;">Seller</th>
+          <th scope="col" data-sort="price" data-type="number" role="button">Asking Price <i class="bi sort-icon"></i></th>
+          <th scope="col" data-sort="city" data-type="string" role="button">City <i class="bi sort-icon"></i></th>
+          <th scope="col" data-sort="state" data-type="string" role="button">State <i class="bi sort-icon"></i></th>
+          <th scope="col" data-sort="seller" data-type="string" role="button">Seller <i class="bi sort-icon"></i></th>
+          <th scope="col" data-sort="adSource" data-type="string" role="button">Ad Source <i class="bi sort-icon"></i></th>
           <th scope="col" class="visually-hidden text-nowrap">Actions</th>
         </tr>
       </thead>
       <tbody>
-        <% vins.forEach((v) => {
+        <% vins.forEach((v, idx) => {
           const vehicleUrl = `/vehicles/${encodeURIComponent(make)}/${encodeURIComponent(v.model)}/${encodeURIComponent(v.year)}/${encodeURIComponent(v.vin)}`;
-          const searchBlob = [v.model, v.year, v.vin, v.seller.name, v.bottomLine].join(' ').toLowerCase();
+          const askingPrice = v.fields['Asking price'] || '';
+          const city = v.fields['City'] || '';
+          const state = v.fields['State'] || '';
+          const adSource = v.adSource || 'Unknown';
+          const sellerName = v.fields['Seller'] ? v.fields['Seller'].split('(')[0].trim() : v.seller.name;
+          const listingUrl = v.listingUrl || v.fields['Listing URL'] || '';
+          const searchBlob = [v.model, v.year, v.vin, sellerName, v.bottomLine, city, state, adSource].join(' ').toLowerCase();
+
+          // Determine connector class for multi-posting vehicles
+          const prevVin = idx > 0 ? vins[idx - 1].vin : null;
+          const nextVin = idx < vins.length - 1 ? vins[idx + 1].vin : null;
+          const sameAsPrev = prevVin === v.vin;
+          const sameAsNext = nextVin === v.vin;
+          let connectorClass = 'vin-connector connector-single';
+          if (sameAsPrev || sameAsNext) {
+            if (!sameAsPrev && sameAsNext) connectorClass = 'vin-connector connector-first';
+            else if (sameAsPrev && !sameAsNext) connectorClass = 'vin-connector connector-last';
+            else if (sameAsPrev && sameAsNext) connectorClass = 'vin-connector';
+            else connectorClass = 'vin-connector connector-single';
+          }
         %>
           <tr
             data-model="<%= v.model.toLowerCase() %>"
             data-year="<%= v.year.toLowerCase() %>"
             data-vin="<%= v.vin.toLowerCase() %>"
             data-rating="<%= v.meta.rating %>"
+            data-price="<%= askingPrice.replace(/[^\d]/g, '') %>"
+            data-city="<%= city.toLowerCase() %>"
+            data-state="<%= state.toLowerCase() %>"
+            data-seller="<%= sellerName.toLowerCase() %>"
+            data-adSource="<%= adSource.toLowerCase() %>"
             data-search="<%= searchBlob %>"
             class="tree-row"
             style="cursor: pointer;"
             data-href="<%= vehicleUrl %>"
           >
+            <td class="<%= connectorClass %>" style="vertical-align: middle;">&nbsp;</td>
             <td><a href="/vehicles/<%= encodeURIComponent(make) %>/<%= encodeURIComponent(v.model) %>" class="text-decoration-none"><%= v.model %></a></td>
             <td><a href="/vehicles/<%= encodeURIComponent(make) %>/<%= encodeURIComponent(v.model) %>/<%= encodeURIComponent(v.year) %>" class="text-decoration-none"><%= v.year %></a></td>
             <td><a href="<%= vehicleUrl %>" class="fw-semibold text-decoration-none"><%= v.vin %></a></td>
             <td>
               <%- include('../partials/star-rating', { metaUrl: `${vehicleUrl}/meta`, rating: v.meta.rating, status: v.meta.status, aiRating: v.aiRating, bottomLineHtml: v.bottomLineHtml, showSpotCheck: true, spotCheck: v.meta.spotCheck }) %>
             </td>
+            <td><% if (askingPrice) { %>$<%= askingPrice %><% } %></td>
+            <td><%= city %></td>
+            <td><%= state %></td>
             <td>
               <% if (v.seller.url) { %>
-                <a href="<%= v.seller.url %>" target="_blank" rel="noopener noreferrer"><%= v.seller.name %> <i class="bi bi-box-arrow-up-right"></i></a>
+                <a href="<%= v.seller.url %>" target="_blank" rel="noopener noreferrer" style="color: #0066cc; text-decoration: underline;"><%= sellerName %> <i class="bi bi-box-arrow-up-right"></i></a>
               <% } else { %>
-                <%= v.seller.name %>
+                <%= sellerName %>
+              <% } %>
+            </td>
+            <td>
+              <% if (listingUrl) { %>
+                <a href="<%= listingUrl %>" target="_blank" rel="noopener noreferrer" style="color: #0066cc; text-decoration: underline;"><%= adSource %> <i class="bi bi-box-arrow-up-right"></i></a>
+              <% } else { %>
+                <%= adSource %>
               <% } %>
             </td>
             <td>
@@ -144,7 +189,45 @@
   <p class="text-muted small" id="makeVinEmptyState" style="display: none;">No vehicles match your search.</p>
 <% } %>
 
+<div id="comparison-report" style="display: none; margin-top: 2rem;"></div>
+
 <script src="/js/simple-tree-table.js" data-table-id="modelsTable" data-search-id="modelSearch" data-empty-id="modelEmptyState"></script>
 <script src="/js/simple-tree-table.js" data-table-id="makeVinsTable" data-search-id="makeVinSearch" data-empty-id="makeVinEmptyState"></script>
 <script src="/js/rating.js"></script>
 <script src="/js/popovers.js"></script>
+<script>
+document.getElementById('comparisonBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('comparisonBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Loading...';
+
+  try {
+    const scope = '<%= make %>';
+    const response = await fetch(`/api/compare?scope=${encodeURIComponent(scope)}&isLocal=true`);
+    if (!response.ok) throw new Error(`API error: ${response.statusText}`);
+
+    const data = await response.json();
+
+    // Load and initialize comparison script
+    const script = document.createElement('script');
+    script.src = '/js/vehicle-comparison.js';
+    script.onload = () => {
+      // Create container with data attribute
+      const container = document.getElementById('comparison-report');
+      container.innerHTML = '<div id="comparison-table" data-comparison-scope="<%= make %>"></div>';
+      container.style.display = 'block';
+
+      // Initialize comparison
+      const comparison = new VehicleComparison('comparison-table');
+      comparison.data = data;
+      comparison.render();
+    };
+    document.head.appendChild(script);
+  } catch (error) {
+    alert('Failed to load comparison: ' + error.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-graph-up"></i> Compare Vehicles';
+  }
+});
+</script>

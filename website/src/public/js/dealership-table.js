@@ -73,7 +73,7 @@
       // their own click instead of also navigating — CSP here has no
       // 'unsafe-inline', so those elements can't stopPropagation() via an
       // inline onclick, hence the guard here instead of relying on that.
-      if (e.target.closest('a, button')) return;
+      if (e.target.closest('a, button, [data-rate], [data-status], [data-spot-check-toggle]')) return;
       window.location.href = row.dataset.href;
     });
   });

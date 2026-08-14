@@ -184,7 +184,7 @@ function monthsBetween(a, b) {
   return Math.round((db - da) / (1000 * 60 * 60 * 24 * 30));
 }
 
-function buildSections(facts, flags) {
+function buildSections(facts, flags, youtubeVideos = []) {
   const bySeverity = (sev) => flags.filter((f) => f.severity === sev);
   const high = bySeverity('high');
   const medium = bySeverity('medium');
@@ -198,7 +198,7 @@ function buildSections(facts, flags) {
 
   const listOrNone = (items, formatter) => (items.length ? items.map(formatter).join('\n') : 'None reported.');
 
-  return [
+  const sections = [
     ['Bottom line', bottomLine],
     ['Title & brand issues', listOrNone(facts.titleBrands || [], (b) => `- ${b.brand}${b.state ? ` (${b.state})` : ''}${b.date ? `, ${b.date}` : ''}`)],
     [
@@ -223,6 +223,14 @@ function buildSections(facts, flags) {
       'Only covers events reported to the source by DMVs, insurers, auctions, and shops that share data — unreported accidents or cash repairs will not appear. Current mechanical condition is not assessed. Get an independent pre-purchase inspection regardless of how clean this report looks.',
     ],
   ];
+
+  // Add YouTube reviews section if available
+  if (youtubeVideos.length > 0) {
+    const videoEmbeds = youtubeVideos.map(v => `<iframe width="280" height="158" src="https://www.youtube.com/embed/${v.videoId}" title="${v.title}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`).join('\n');
+    sections.push(['Top YouTube reviews', videoEmbeds]);
+  }
+
+  return sections;
 }
 
 export async function vehicleWorkflow(ctx, { input }) {
@@ -315,6 +323,25 @@ export async function vehicleWorkflow(ctx, { input }) {
       ctx.phase('Downloading listing photos');
       pagePhotos = findImageUrls($, finalUrl, { limit: 40 });
     }
+
+    // Also search for manufacturer/review site photos for type-level gallery
+    ctx.phase('Searching for exterior and interior photos');
+    try {
+      const photoSearch = await askClaudeJson(
+        `Search for URLs for professional exterior and interior photos of a ${facts.year || 'unknown year'} ${facts.make || 'unknown make'} ${facts.model || 'unknown model'} from manufacturer sites, review sites, or major automotive databases. Return 4-8 exterior URLs and 4-8 interior URLs. Use high-quality, clear images.`,
+        {
+          type: 'object',
+          properties: {
+            exterior: { type: 'array', items: { type: 'string' } },
+            interior: { type: 'array', items: { type: 'string' } }
+          }
+        },
+        ctx.signal
+      );
+      // We'll use these after extracting vehicle facts
+    } catch {
+      // If photo search fails, continue with what we have
+    }
   }
 
   if (!reportText) {
@@ -323,6 +350,35 @@ export async function vehicleWorkflow(ctx, { input }) {
 
   const facts = await extractFacts(reportText, ctx);
   const flags = evaluateRedFlags(facts);
+
+  // Search for top YouTube reviews
+  let youtubeVideos = [];
+  try {
+    ctx.phase('Searching for top YouTube reviews');
+    const videoData = await askClaudeJson(
+      `Find the top 2-3 most popular and highest-rated YouTube reviews for a ${facts.year || '2020'} ${facts.make || 'BMW'} ${facts.model || 'Z4'}. Return their YouTube video IDs and titles. Look for professional reviewers like Doug DeMuro, Throttle House, MotorTrend, etc. or highly-watched general reviews.`,
+      {
+        type: 'object',
+        properties: {
+          videos: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                videoId: { type: 'string' },
+                title: { type: 'string' },
+                channel: { type: 'string' }
+              }
+            }
+          }
+        }
+      },
+      ctx.signal
+    );
+    youtubeVideos = videoData.videos || [];
+  } catch {
+    // If YouTube search fails, continue without videos
+  }
 
   const make = facts.make || 'Unknown';
   const model = facts.model || 'Unknown';
@@ -379,7 +435,7 @@ export async function vehicleWorkflow(ctx, { input }) {
   const content = await writeResearchFile(path.join(vinDir, 'analysis.md'), {
     title: `${year} ${make} ${model} — ${vin}`,
     fields,
-    sections: buildSections(facts, flags),
+    sections: buildSections(facts, flags, youtubeVideos),
   });
 
   ctx.phase('Done');

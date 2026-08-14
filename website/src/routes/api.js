@@ -4,6 +4,7 @@ import { vehicleWorkflow } from '../services/workflows/vehicleWorkflow.js';
 import { findAllWorkflow } from '../services/workflows/findAllWorkflow.js';
 import { startRun, getRun, cancelRun } from '../services/skillRunner.js';
 import { friendlyError, friendlyExitError } from '../services/friendlyError.js';
+import { compareVehicles } from '../services/vehicleComparison.js';
 
 const router = Router();
 
@@ -143,6 +144,28 @@ router.post('/runs/:id/answer', (req, res) => {
 router.post('/runs/:id/cancel', (req, res) => {
   const ok = cancelWorkflow(req.params.id) || cancelRun(req.params.id);
   res.json({ ok });
+});
+
+// Vehicle Comparison Endpoint
+// Query params: scope (e.g. "BMW/Z4/2020" or "BMW/2020"), isLocal (true/false)
+router.get('/compare', async (req, res) => {
+  try {
+    const { scope, isLocal = true } = req.query;
+    if (!scope) {
+      return res.status(400).json({ error: 'scope parameter required (e.g., "BMW/Z4/2020")' });
+    }
+
+    const result = await compareVehicles(scope, isLocal === 'true' || isLocal === true);
+
+    if (result.error) {
+      return res.status(404).json({ error: result.error });
+    }
+
+    res.json(result);
+  } catch (error) {
+    console.error('Comparison API error:', error);
+    res.status(500).json({ error: `Comparison failed: ${error.message}` });
+  }
 });
 
 export default router;
